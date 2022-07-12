@@ -1,4 +1,9 @@
+import { VercelResponse } from '@vercel/node';
+
 export class ApiError extends Error {
+	statusCode: number;
+	name: string;
+
 	constructor({ message, statusCode }) {
 		super(message);
 
@@ -7,7 +12,27 @@ export class ApiError extends Error {
 	}
 }
 
+interface TypeBody {
+	statusCode?: number;
+	error?: Error;
+	errorSummary?: string;
+	errorCode?: string | number;
+	errorMessage?: string;
+	errorType?: string | number;
+	errorStack?: string;
+}
+
 export class ErrorResponse {
+	res?: VercelResponse;
+	body?: TypeBody;
+	statusCode?: TypeBody['statusCode'];
+	error?: TypeBody['error'];
+	errorSummary?: TypeBody['errorSummary'];
+	errorCode?: TypeBody['errorCode'];
+	errorMessage?: TypeBody['errorMessage'];
+	errorType?: TypeBody['errorType'];
+	errorStack?: TypeBody['errorStack'];
+
 	constructor(options, res) {
 		this.res = res;
 		this.statusCode = 500;
@@ -25,7 +50,7 @@ export class ErrorResponse {
 		}
 
 		if (this.error instanceof Error) {
-			const { message, code, stack } = this.error;
+			const { message, name: code, stack } = this.error;
 
 			this.errorMessage = message;
 			this.errorType = code;
@@ -61,10 +86,10 @@ export class ErrorResponse {
 			},
 		};
 
-		const responseBody = errorMap[this.statusCode];
+		const responseBody: TypeBody = errorMap[this.statusCode ?? 500];
 
 		if (this.res) {
-			return this.res.status(this.statusCode).json(responseBody);
+			return this.res.status(this.statusCode ?? 500).json(responseBody);
 		}
 
 		return responseBody;
