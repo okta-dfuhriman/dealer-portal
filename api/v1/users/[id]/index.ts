@@ -55,6 +55,9 @@ module.exports = async (req: VercelRequest, res: VercelResponse) => {
 	} catch (error) {
 		return res
 			.status(error?.statusCode ?? 500)
-			.json({ code: error?.code, message: error?.message.toString() });
+			.json({
+				name: error?.code || error?.name,
+				message: error?.message?.toString(),
+			});
 	}
 };

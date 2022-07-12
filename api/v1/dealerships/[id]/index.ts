@@ -33,8 +33,9 @@ module.exports = async (req: VercelRequest, res: VercelResponse) => {
 				return res.status(501).send('Not implemented');
 		}
 	} catch (error) {
-		return res
-			.status(error?.statusCode ?? 500)
-			.json({ code: error?.code, message: error?.message.toString() });
+		return res.status(error?.statusCode ?? 500).json({
+			name: error?.code || error?.name,
+			message: error?.message?.toString(),
+		} as Error);
 	}
 };

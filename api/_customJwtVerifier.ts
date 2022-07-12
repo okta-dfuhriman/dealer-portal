@@ -25,7 +25,7 @@ class AssertedClaimsVerifier {
 		this.errors = [];
 	}
 
-	extractOperator(claim) {
+	extractOperator(claim: string) {
 		const idx = claim.indexOf('.');
 		if (idx >= 0) {
 			return claim.substring(idx + 1);
