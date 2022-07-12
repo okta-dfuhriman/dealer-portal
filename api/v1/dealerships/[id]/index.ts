@@ -32,7 +32,7 @@ module.exports = async (req: VercelRequest, res: VercelResponse) => {
 			default:
 				return res.status(501).send('Not implemented');
 		}
-	} catch (error) {
+	} catch (error: any | ApiError) {
 		if (error instanceof ApiError) {
 			return res
 				.status(

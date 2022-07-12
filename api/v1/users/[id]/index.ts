@@ -19,12 +19,12 @@ const getUser = async (req: VercelRequest, res: VercelResponse) => {
 		}
 
 		return res.json(user);
-	} catch (error) {
+	} catch (error: any | Error) {
 		if (error instanceof Error) {
 			throw new Error(`getUser(): ${error?.toString()}`);
 		}
 
-		throw error as any;
+		throw error;
 	}
 };
 
