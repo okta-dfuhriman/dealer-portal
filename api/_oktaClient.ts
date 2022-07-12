@@ -119,8 +119,8 @@ export default class OktaClient extends Client {
 			delete user.profile;
 
 			return { ...user, profile } as User;
-		} catch (error) {
-			throw new Error(error?.toString());
+		} catch (error: any) {
+			throw new Error(error);
 		}
 	}
 
@@ -226,10 +226,11 @@ export default class OktaClient extends Client {
 	async cleanProfile(profile: OktaUserProfile) {
 		const result: UserProfile = {};
 
-		for (let key in profile as UserProfile) {
+		let key: keyof UserProfile;
+
+		for (key in profile) {
 			if (!_.isEmpty(profile[key])) {
-				result[key as keyof UserProfile] =
-					profile[key as keyof UserProfile];
+				result[key] = profile[key];
 			}
 		}
 

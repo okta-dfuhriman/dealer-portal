@@ -20,7 +20,11 @@ const getUser = async (req: VercelRequest, res: VercelResponse) => {
 
 		return res.json(user);
 	} catch (error) {
-		throw new Error(`getUser(): ${error}`);
+		if (error instanceof Error) {
+			throw new Error(`getUser(): ${error?.toString()}`);
+		}
+
+		throw error as any;
 	}
 };
 
@@ -52,12 +56,7 @@ module.exports = async (req: VercelRequest, res: VercelResponse) => {
 			default:
 				return res.status(501).send('');
 		}
-	} catch (error) {
-		return res
-			.status(error?.statusCode ?? 500)
-			.json({
-				name: error?.code || error?.name,
-				message: error?.message?.toString(),
-			});
+	} catch (error: any) {
+		return res.status(500).json(error);
 	}
 };

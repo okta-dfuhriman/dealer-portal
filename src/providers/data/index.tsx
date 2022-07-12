@@ -70,8 +70,6 @@ const DataProvider = (
 	url?: string,
 	httpClient: HttpClient = _httpClient
 ): Partial<RaDataProvider> => {
-	const { getAccessToken } = useAuthProvider();
-
 	return {
 		getList: (resource, params) => {
 			const {

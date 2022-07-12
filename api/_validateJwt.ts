@@ -95,8 +95,8 @@ const validateJwt = async (
 		}
 
 		return result;
-	} catch (error) {
-		return { isValid: false, error: error?.toString() };
+	} catch (error: any) {
+		return { isValid: false, error };
 	}
 };
 

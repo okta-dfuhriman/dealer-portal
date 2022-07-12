@@ -141,7 +141,7 @@ const verifyAssertedClaims = (verifier: JwtVerifier, claims: Claims) => {
 		const claim = assertedClaimsVerifier.extractClaim(claimName);
 		const actualValue: any = claims[claim];
 		assertedClaimsVerifier.checkAssertions(
-			operator,
+			operator as 'includes',
 			claim,
 			expectedValue,
 			actualValue

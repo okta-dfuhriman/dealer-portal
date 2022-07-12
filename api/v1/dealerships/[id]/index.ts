@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import * as _ from 'lodash';
-import { doAuthZ, OktaClient } from '../../../_common';
+import { doAuthZ, OktaClient, ApiError } from '../../../_common';
 
 const getDealership = async (req: VercelRequest, res: VercelResponse) => {
 	// 1) Validate the accessToken
@@ -33,9 +33,10 @@ module.exports = async (req: VercelRequest, res: VercelResponse) => {
 				return res.status(501).send('Not implemented');
 		}
 	} catch (error) {
-		return res.status(error?.statusCode ?? 500).json({
-			name: error?.code || error?.name,
-			message: error?.message?.toString(),
-		} as Error);
+		if (error instanceof ApiError) {
+			return res.status(error?.statusCode ?? 500).json(error?.message);
+		}
+
+		return res.status(500).json(error);
 	}
 };
