@@ -80,6 +80,8 @@ const AuthProvider = {
 	// attempts a silent authentication to try and establish a session (if one exists).
 	checkAuth: () => {
 		return oktaAuth.isAuthenticated().then((isAuthenticated) => {
+			console.log('isAuthenticated:', isAuthenticated);
+
 			if (isAuthenticated) {
 				return Promise.resolve();
 			}

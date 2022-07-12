@@ -1,46 +1,24 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getOktaUser, validateJwt, ValidateJwtOptions } from '../../../_common';
-import { ErrorResponse } from '../../../_error';
+import { doAuthZ, OktaClient } from '../../../_common';
 
-const doAuthZ = async (
-	req: VercelRequest,
-	res: VercelResponse,
-	scopes: string[] = []
-) => {
-	try {
-		// 1) Validate the accessToken
-
-		const options =
-			scopes.length > 0
-				? {
-						assertClaims: {
-							'scp.includes': scopes,
-						},
-				  }
-				: undefined;
-
-		const { isValid, error, accessToken } = await validateJwt(options, req);
-
-		if (!isValid) {
-			if (error) {
-				throw error;
-			} else {
-				throw new ErrorResponse(401, res);
-			}
-		}
-
-		return accessToken;
-	} catch (error) {}
-};
-
-const getUser = async (req, res) => {
+const getUser = async (req: VercelRequest, res: VercelResponse) => {
 	try {
 		// 1) Validate the accessToken
 		const accessToken = await doAuthZ(req, res, ['user:read:self']);
 
-		if (accessToken) {
-			return res.json(await getOktaUser(accessToken));
+		const client = new OktaClient();
+
+		if (!accessToken) {
+			return res.status(401).send('Unauthorized');
 		}
+
+		const user = await client.getOktaUser(accessToken.uid as string);
+
+		if (!user) {
+			throw new Error('Unable to find user!');
+		}
+
+		return res.json(user);
 	} catch (error) {
 		throw new Error(`getUser(): ${error}`);
 	}
@@ -61,7 +39,7 @@ const getUser = async (req, res) => {
 // 	}
 // };
 
-module.exports = async (req, res) => {
+module.exports = async (req: VercelRequest, res: VercelResponse) => {
 	try {
 		const { method } = req;
 
@@ -72,7 +50,7 @@ module.exports = async (req, res) => {
 			case 'POST':
 			// return await updateUser(req, res);
 			default:
-				return res.status(501).send();
+				return res.status(501).send('');
 		}
 	} catch (error) {
 		return res

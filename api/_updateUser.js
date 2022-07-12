@@ -1,7 +1,11 @@
 import { OktaClient } from './_common';
-import getUnifiedProfile from './_getUnifiedProfile';
 
-const updateUser = async ({ accessToken, body, id, client = new OktaClient() }) => {
+const updateUser = async ({
+	accessToken,
+	body,
+	id,
+	client = new OktaClient(),
+}) => {
 	// `id` should be the primary profile, but we will update both the primary and logged in user's profiles
 	const {
 		claims: { sub, uid },
@@ -29,7 +33,7 @@ const updateUser = async ({ accessToken, body, id, client = new OktaClient() }) 
 	}
 
 	// 2) fetch and return a fresh unifiedProfile
-	return await getUnifiedProfile(accessToken);
+	// return await getUnifiedProfile(accessToken);
 };
 
 export default updateUser;

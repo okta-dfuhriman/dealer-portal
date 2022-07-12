@@ -5,7 +5,7 @@ import { JwtVerifier } from './_common';
 const {
 	VITE_APP_OKTA_URL: ORG_URL,
 	VITE_APP_OKTA_AUTH_SERVER_ID: AUTH_SERVER_ID,
-	VITE_APP_OKTA_AUD: AUD,
+	VITE_APP_OKTA_AUD: AUD = 'api://dealer-portal',
 } = process.env;
 
 const ISSUER = `${ORG_URL}/oauth2/${AUTH_SERVER_ID}`;
@@ -36,12 +36,7 @@ const validateJwt = async (
 	options: ValidateJwtOptions | undefined,
 	req: VercelRequest
 ): Promise<ValidateResult> => {
-	const {
-		idToken,
-		accessToken,
-		aud = AUD!,
-		assertClaims = { 'scp.includes': ['user:read:self'] },
-	} = options || {};
+	const { idToken, accessToken, aud = AUD!, assertClaims } = options || {};
 	let _accessTokenString = accessToken;
 	let _idTokenString = idToken;
 
@@ -53,7 +48,6 @@ const validateJwt = async (
 
 	try {
 		const {
-			query: { id },
 			headers: { authorization },
 		} = req || {};
 
@@ -86,36 +80,15 @@ const validateJwt = async (
 			// i) Spin up our jwtVerifier
 			let jwtVerifier = new OktaJwtVerifier({
 				issuer: ISSUER,
+				assertClaims,
 			});
 
 			// ii) Do the initial/basic JWT validation
-			let { claims } =
+			const { claims } =
 				(await jwtVerifier.verifyAccessToken(
 					_accessTokenString,
 					aud
 				)) || {};
-
-			const { sub, scp } = claims;
-
-			const assertScopes = assertClaims['scp.includes'];
-
-			if (
-				id !== sub &&
-				assertScopes.findIndex((scope) => scope === 'user:read') === -1
-			) {
-				assertScopes.push('user:read');
-			}
-
-			// iii) Validate the necessary claims/scopes
-			jwtVerifier = new OktaJwtVerifier({
-				issuer: ISSUER,
-				assertClaims: { ...assertClaims, 'scp.includes': assertScopes },
-			});
-
-			({ claims } = await jwtVerifier.verifyAccessToken(
-				_accessTokenString,
-				aud
-			));
 
 			result.accessToken = claims;
 			result.isValid = true;

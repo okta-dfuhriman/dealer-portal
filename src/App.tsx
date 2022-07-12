@@ -3,6 +3,8 @@ import {
 	Admin,
 	AuthProvider as RaAuthProvider,
 	CustomRoutes,
+	DataProvider as RaDataProvider,
+	ListGuesser,
 	Loading,
 	Resource,
 } from 'react-admin';
@@ -11,7 +13,7 @@ import polyglotI18nProvider from 'ra-i18n-polyglot';
 
 import Theme from 'styles/theme';
 import Languages from 'i18n';
-import { Layout } from 'components';
+import { DealershipList, Layout, UserList } from 'components';
 import { LoginPage } from 'pages';
 import { AuthProvider, DataProvider } from 'providers';
 
@@ -26,7 +28,7 @@ const queryConfig: QueryClientConfig = {
 	},
 };
 
-const queryClient = new QueryClient(queryConfig);
+// const queryClient = new QueryClient(queryConfig);
 
 const i18nProvider = polyglotI18nProvider((locale) => {
 	if (locale === 'fr') {
@@ -43,16 +45,16 @@ const App = () => {
 			title='Dealer Portal'
 			requireAuth
 			authProvider={AuthProvider}
-			dataProvider={DataProvider}
+			dataProvider={DataProvider(AuthProvider) as RaDataProvider}
 			loginPage={LoginPage}
 			layout={Layout}
 			i18nProvider={i18nProvider}
 			disableTelemetry
 			theme={Theme.lightTheme}
-			queryClient={queryClient}
+			// queryClient={queryClient}
 		>
-			<Resource name='users' />
-			<Resource name='dealers' />
+			<Resource name='users' list={UserList} />
+			<Resource name='dealerships' list={DealershipList} />
 			{/* <CustomRoutes> */}
 			{/* <Route path='/' element={<Test />} /> */}
 			{/* </CustomRoutes> */}

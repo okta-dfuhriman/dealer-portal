@@ -34,12 +34,12 @@ const customEnglishMessages: TranslationMessages = {
 		},
 		menu: {
 			users: 'Users',
-			dealers: 'Dealerships',
+			dealerships: 'Dealerships',
 		},
 	},
 	resources: {
-		dealers: {
-			name: 'Dealer |||| Dealers',
+		dealerships: {
+			name: 'Dealership |||| Dealerships',
 			fields: {
 				commands: 'Orders',
 				first_seen: 'First seen',
@@ -73,7 +73,7 @@ const customEnglishMessages: TranslationMessages = {
 				change_password: 'Change Password',
 			},
 			page: {
-				delete: 'Delete Dealer',
+				delete: 'Delete Dealerships',
 			},
 			errors: {
 				password_mismatch:

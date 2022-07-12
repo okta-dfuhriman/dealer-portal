@@ -1,22 +1,143 @@
-import { fetchUtils, Options, useAuthProvider } from 'react-admin';
-import simpleRestProvider from 'ra-data-simple-rest';
+import {
+	AuthProvider,
+	DataProvider as RaDataProvider,
+	GetListParams,
+	fetchUtils,
+	Options,
+	useAuthProvider,
+	GetManyParams,
+} from 'react-admin';
 
 const ORIGIN =
-	import.meta.env.VITE_APP_API_ORIGIN || window.location.origin + '/api';
+	import.meta.env.VITE_APP_API_ORIGIN || window.location.origin + '/api/v1';
 
-const httpClient = (url: string, options: Options = {}) => {
-	const { getAccessToken } = useAuthProvider();
+export interface SearchParams {
+	q?: string;
+	after?: string;
+	limit?: number;
+	filter?: string;
+	search?: string;
+	sortBy?: string;
+	sortOrder?: 'asc' | 'desc';
+	id?: string;
+}
 
-	const headers = new Headers(options?.headers);
+export type HttpClient = (
+	authProvider: AuthProvider,
+	url: string | URL,
+	options?: Options
+) => Promise<{ status: number; headers: Headers; body: string; json: any }>;
 
+const _httpClient: HttpClient = ({ getAccessToken }, url, options = {}) => {
 	// get accessToken
 	return getAccessToken().then((accessToken: string) => {
-		headers.append('Authorization', `Bearer ${accessToken}`);
+		options.user = {
+			authenticated: true,
+			token: `Bearer ${accessToken}`,
+		};
 
 		return fetchUtils.fetchJson(url, options);
 	});
 };
 
-const dataProvider = simpleRestProvider(ORIGIN, httpClient);
+type GenerateURLOptions = {
+	resource: string;
+	url?: string;
+	params?: SearchParams;
+};
 
-export default dataProvider;
+const generateURL = ({ resource, url, params }: GenerateURLOptions) => {
+	let path = resource;
+
+	const baseUrl = url || window.location.origin + '/api/v1/';
+
+	if (params) {
+		if (params.id) {
+			path = resource + '/' + params.id;
+		} else {
+			path =
+				resource +
+				'?' +
+				new URLSearchParams(Object.entries(params))?.toString();
+		}
+	}
+
+	return new URL(path, baseUrl);
+};
+
+const DataProvider = (
+	authProvider: AuthProvider,
+	url?: string,
+	httpClient: HttpClient = _httpClient
+): Partial<RaDataProvider> => {
+	const { getAccessToken } = useAuthProvider();
+
+	return {
+		getList: (resource, params) => {
+			const {
+				pagination: { page, perPage = 200 },
+				sort: { field, order = 'asc' },
+				filter,
+			} = params || {};
+
+			console.log(order);
+
+			const searchParams: SearchParams = {};
+
+			if (field !== 'id') {
+				searchParams['sortBy'] = field;
+			}
+
+			if (searchParams?.sortBy) {
+				searchParams['sortOrder'] =
+					order.toLowerCase() as SearchParams['sortOrder'];
+			}
+
+			searchParams['limit'] = perPage < 200 ? perPage : 200;
+
+			// TODO implement pagination
+			// const page =
+			// TODO implement search/filtering
+			// const search =
+			// const filter =
+
+			const _url = generateURL({
+				resource,
+				params: searchParams,
+				url,
+			});
+
+			if (page || filter) {
+				console.warn(
+					'Pagination and filtering has not been implemented!'
+				);
+			}
+
+			return httpClient(authProvider, _url).then(({ json }) => ({
+				...json,
+			}));
+		},
+		getOne: (resource, params) =>
+			httpClient(authProvider, generateURL({ resource, params })).then(
+				({ json: { data } }) => ({ data })
+			),
+		getMany: (resource, params) => {
+			const { ids } = params || {};
+
+			const searchValues = [];
+
+			for (let i = 0; i < ids.length; i++) {
+				searchValues.push(`id eq "${ids[i]}"`);
+			}
+
+			const search = searchValues.join(' OR ');
+
+			return httpClient(
+				authProvider,
+				generateURL({ resource, params: { search } })
+			).then(({ json: { data } }) => ({ data }));
+		},
+	};
+};
+
+export default DataProvider;
