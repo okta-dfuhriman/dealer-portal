@@ -1,6 +1,6 @@
-import jwksRSA, { JwksClient, SigningKey } from 'jwks-rsa';
-import nJwt, { Verifier, Jwt, JwtBody } from 'njwt';
-import { Jwt as OktaJwt, JwtClaims as Claims } from '@okta/jwt-verifier';
+import jwksRSA, { JwksClient } from 'jwks-rsa';
+import nJwt, { Verifier } from 'njwt';
+import type { JwtClaims as Claims } from '@okta/jwt-verifier';
 
 const {
 	VITE_APP_OKTA_TESTING_DISABLEHTTPSCHECK: DISABLEHTTPSCHECK = false,

@@ -1,7 +1,6 @@
-import { SVGProps } from 'react';
 import { useTheme } from '@mui/material/styles';
 
-const Logo = (props: SVGProps<SVGSVGElement>) => {
+const Logo = () => {
 	const theme = useTheme();
 	return (
 		<svg

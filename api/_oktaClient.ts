@@ -1,12 +1,12 @@
 import * as _ from 'lodash';
-import {
-	Client,
+import { Client } from '@okta/okta-sdk-nodejs';
+import type {
 	User as OktaUser,
 	UserProfile as OktaUserProfile,
 	GroupProfile as OktaGroupProfile,
 	GroupType as OktaGroupType,
 } from '@okta/okta-sdk-nodejs';
-import { RequestOptions } from '@okta/okta-sdk-nodejs/src/types/request-options';
+import type { RequestOptions } from '@okta/okta-sdk-nodejs/src/types/request-options';
 import { ApiError } from './_common';
 import md5 from 'blueimp-md5';
 import { randomBytes } from 'crypto';

@@ -1,12 +1,5 @@
-import {
-	AuthProvider,
-	DataProvider as RaDataProvider,
-	GetListParams,
-	fetchUtils,
-	Options,
-	useAuthProvider,
-	GetManyParams,
-} from 'react-admin';
+import { DataProvider as RaDataProvider, fetchUtils } from 'react-admin';
+import type { AuthProvider, Options } from 'react-admin';
 
 const ORIGIN =
 	import.meta.env.VITE_APP_API_ORIGIN || window.location.origin + '/api/v1';

@@ -1,9 +1,5 @@
-import {
-	TextField,
-	useRecordContext,
-	WrapperField,
-	WrapperFieldProps,
-} from 'react-admin';
+import { TextField, useRecordContext, WrapperField } from 'react-admin';
+import type { WrapperFieldProps } from 'react-admin';
 import { Typography } from '@mui/material';
 
 import DealerLogo from './DealerLogo';

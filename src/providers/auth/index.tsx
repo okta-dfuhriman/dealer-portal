@@ -1,5 +1,6 @@
-import { AuthProvider as RaAuthProvider, UserIdentity } from 'react-admin';
-import { OktaAuth, UserClaims, AccessToken } from '@okta/okta-auth-js';
+import type { AuthProvider as RaAuthProvider, UserIdentity } from 'react-admin';
+import { OktaAuth } from '@okta/okta-auth-js';
+import type { UserClaims, AccessToken } from '@okta/okta-auth-js';
 import md5 from 'blueimp-md5';
 
 import { authConfig } from 'config';
@@ -153,6 +154,6 @@ const AuthProvider = {
 
 		return Promise.resolve(result);
 	},
-};
+} as RaAuthProvider;
 
 export default AuthProvider;

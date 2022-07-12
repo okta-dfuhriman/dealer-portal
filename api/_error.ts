@@ -1,4 +1,4 @@
-import { VercelResponse } from '@vercel/node';
+import type { VercelResponse } from '@vercel/node';
 
 export class ApiError extends Error {
 	statusCode: string | number;

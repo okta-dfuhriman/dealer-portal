@@ -1,8 +1,6 @@
 import { useRecordContext } from 'react-admin';
-import {
-	Avatar as MuiAvatar,
-	AvatarProps as MuiAvatarProps,
-} from '@mui/material';
+import { Avatar as MuiAvatar } from '@mui/material';
+import type { AvatarProps as MuiAvatarProps } from '@mui/material';
 
 export interface DealerLogoProps extends MuiAvatarProps {
 	source: string;

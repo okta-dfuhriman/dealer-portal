@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { validateJwt, ValidateJwtOptions } from './_common';
+import { validateJwt } from './_common';
+import type { ValidateJwtOptions } from './_common';
 import { ErrorResponse } from './_error';
 
 const doAuthZ = async (

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuthState, useLogin } from 'react-admin';
-import { LoadingButton, LoadingButtonProps } from '@mui/lab';
+import { LoadingButton } from '@mui/lab';
+import type { LoadingButtonProps } from '@mui/lab';
 
 export interface LoginButtonProps extends LoadingButtonProps {
 	label?: string;

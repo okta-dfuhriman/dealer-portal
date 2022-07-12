@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loading, Login, useLogin } from 'react-admin';
+import { Loading, useLogin } from 'react-admin';
 
 const LoginPage = () => {
 	const login = useLogin();

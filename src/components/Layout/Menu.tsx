@@ -5,12 +5,8 @@ import {
 	TimeToLeave as DealerIcon,
 } from '@mui/icons-material';
 
-import {
-	useTranslate,
-	MenuItemLink,
-	MenuProps,
-	useSidebarState,
-} from 'react-admin';
+import { useTranslate, MenuItemLink, useSidebarState } from 'react-admin';
+import type { MenuProps } from 'react-admin';
 
 // import visitors from '../visitors';
 // import orders from '../orders';
