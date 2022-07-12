@@ -223,7 +223,7 @@ export default class OktaClient extends Client {
 		return `https://www.gravatar.com/avatar/${hashedEmail}?d=identicon`;
 	}
 
-	async cleanProfile(profile: OktaUserProfile) {
+	async cleanProfile(profile: UserProfile) {
 		const result: UserProfile = {};
 
 		let key: keyof UserProfile;

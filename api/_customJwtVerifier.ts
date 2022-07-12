@@ -1,4 +1,4 @@
-import jwksRSA, { JwksClient } from 'jwks-rsa';
+import jwksRSA, { JwksClient, SigningKey } from 'jwks-rsa';
 import nJwt, { Verifier, Jwt, JwtBody } from 'njwt';
 import { Jwt as OktaJwt, JwtClaims as Claims } from '@okta/jwt-verifier';
 
@@ -188,7 +188,7 @@ export default class JwtVerifier {
 			.withKeyResolver((kid, cb) => {
 				if (kid) {
 					this.jwksClient.getSigningKey(kid, (err, key) => {
-						let _key;
+						let _key: string = '';
 
 						if (key) {
 							_key =

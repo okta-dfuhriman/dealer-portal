@@ -34,7 +34,13 @@ module.exports = async (req: VercelRequest, res: VercelResponse) => {
 		}
 	} catch (error) {
 		if (error instanceof ApiError) {
-			return res.status(error?.statusCode ?? 500).json(error?.message);
+			return res
+				.status(
+					(typeof error?.statusCode === 'string'
+						? parseInt(error.statusCode)
+						: error.statusCode) || 500
+				)
+				.json(error?.message);
 		}
 
 		return res.status(500).json(error);

@@ -28,6 +28,10 @@ interface TypeBody {
 	errorStack?: string;
 }
 
+interface ErrorMap {
+	[key: number]: TypeBody;
+}
+
 export class ErrorResponse {
 	res?: VercelResponse;
 	body?: TypeBody;
@@ -71,7 +75,7 @@ export class ErrorResponse {
 			errorStack: this.errorStack,
 		};
 
-		const errorMap = {
+		const errorMap: ErrorMap = {
 			401: {
 				errorSummary: 'Authorization failed',
 				errorCode: 'E0000004',
@@ -92,10 +96,11 @@ export class ErrorResponse {
 			},
 		};
 
-		const responseBody: TypeBody = errorMap[this?.statusCode || 500];
+		const responseBody: TypeBody =
+			errorMap[(this?.statusCode as keyof ErrorMap) || 500];
 
 		if (this.res) {
-			return this.res.status(this.statusCode || 500).json(responseBody);
+			return this.res.status(this?.statusCode || 500).json(responseBody);
 		}
 
 		return responseBody;
