@@ -5,6 +5,8 @@ const {
 	VITE_APP_OKTA_AUTH_SERVER_ID: AUTH_SERVER_ID,
 	VITE_APP_OKTA_URL: OKTA_URL,
 	VITE_APP_OKTA_REDIRECT_URI: REDIRECT_URI,
+	VITE_APP_OKTA_TOKEN_MANAGER_AUTO_RENEW: TOKEN_MANAGER_AUTO_RENEW = true,
+	VITE_APP_OKTA_SERVICES_AUTO_RENEW: SERVICES_AUTO_RENEW = false,
 	PROD: isProd,
 } = import.meta.env;
 
@@ -19,10 +21,10 @@ export const authConfig = {
 		scopes: SCOPES?.split(' '),
 		pkce: true,
 		tokenManager: {
-			autoRenew: true,
+			autoRenew: TOKEN_MANAGER_AUTO_RENEW,
 		},
 		services: {
-			autoRenew: true,
+			autoRenew: SERVICES_AUTO_RENEW,
 		},
 		devMode: !isProd,
 		disableHttpsCheck: DISABLEHTTPSCHECK,
