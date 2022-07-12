@@ -1,5 +1,9 @@
-import { DataProvider as RaDataProvider, fetchUtils } from 'react-admin';
-import type { AuthProvider, Options } from 'react-admin';
+import { fetchUtils } from 'react-admin';
+import type {
+	AuthProvider,
+	DataProvider as RaDataProvider,
+	Options,
+} from 'react-admin';
 import type { UserProfile } from '@okta/okta-sdk-nodejs';
 
 const ORIGIN =
@@ -63,81 +67,91 @@ const generateURL = ({ resource, url, params }: GenerateURLOptions) => {
 	return new URL(path, baseUrl);
 };
 
-const DataProvider = (
-	authProvider: AuthProvider,
-	url?: string,
-	httpClient: HttpClient = _httpClient
-): Partial<RaDataProvider> => {
-	return {
-		getList: (resource, params) => {
-			const {
-				pagination: { page, perPage = 200 },
-				sort: { field, order = 'asc' },
-				filter,
-			} = params || {};
+export default class DataProvider {
+	authProvider: AuthProvider;
+	httpClient: HttpClient;
+	url?: string;
+	constructor(
+		authProvider: AuthProvider,
+		url?: string,
+		httpClient: HttpClient = _httpClient
+	) {
+		this.authProvider = authProvider;
+		this.httpClient = httpClient;
+		this.url = url;
+	}
 
-			console.log(order);
+	init() {
+		return {
+			getList: (resource, params) => {
+				const {
+					pagination: { page, perPage = 200 },
+					sort: { field, order = 'asc' },
+					filter,
+				} = params || {};
 
-			const searchParams: SearchParams = {};
+				const searchParams: SearchParams = {};
 
-			if (field !== 'id') {
-				searchParams['sortBy'] = field;
-			}
+				if (field !== 'id') {
+					searchParams['sortBy'] = field;
+				}
 
-			if (searchParams?.sortBy) {
-				searchParams['sortOrder'] =
-					order.toLowerCase() as SearchParams['sortOrder'];
-			}
+				if (searchParams?.sortBy) {
+					searchParams['sortOrder'] =
+						order.toLowerCase() as SearchParams['sortOrder'];
+				}
 
-			searchParams['limit'] = perPage < 200 ? perPage : 200;
+				searchParams['limit'] = perPage < 200 ? perPage : 200;
 
-			// TODO implement pagination
-			// const page =
-			// TODO implement search/filtering
-			// const search =
-			// const filter =
+				// TODO implement pagination
+				// const page =
+				// TODO implement search/filtering
+				// const search =
+				// const filter =
 
-			const _url = generateURL({
-				resource,
-				params: searchParams,
-				url,
-			});
+				const _url = generateURL({
+					resource,
+					params: searchParams,
+					url: this.url,
+				});
 
-			if (page || filter) {
-				console.warn(
-					'Pagination and filtering has not been implemented!'
+				if (page || filter) {
+					console.warn(
+						'Pagination and filtering has not been implemented!'
+					);
+				}
+
+				return this.httpClient(this.authProvider, _url).then(
+					({ json }) => ({
+						...json,
+					})
 				);
-			}
+			},
+			getOne: (resource, params) =>
+				this.httpClient(
+					this.authProvider,
+					generateURL({ resource, params })
+				).then(({ json: { data } }) => ({ data })),
+			getMany: (resource, params) => {
+				const { ids } = params || {};
 
-			return httpClient(authProvider, _url).then(({ json }) => ({
-				...json,
-			}));
-		},
-		getOne: (resource, params) =>
-			httpClient(authProvider, generateURL({ resource, params })).then(
-				({ json: { data } }) => ({ data })
-			),
-		getMany: (resource, params) => {
-			const { ids } = params || {};
+				const searchValues = [];
 
-			const searchValues = [];
+				for (let i = 0; i < ids.length; i++) {
+					searchValues.push(`id eq "${ids[i]}"`);
+				}
 
-			for (let i = 0; i < ids.length; i++) {
-				searchValues.push(`id eq "${ids[i]}"`);
-			}
+				const search = searchValues.join(' OR ');
 
-			const search = searchValues.join(' OR ');
-
-			return httpClient(
-				authProvider,
-				generateURL({ resource, params: { search } })
-			).then(({ json: { data } }) => ({ data }));
-		},
-		create: (resource, { data = {}, ...params }) =>
-			httpClient(authProvider, generateURL({ resource }), {
-				body: JSON.stringify(data),
-			}).then(({ json: { data } }) => ({ data })),
-	};
-};
-
-export default DataProvider;
+				return this.httpClient(
+					this.authProvider,
+					generateURL({ resource, params: { search } })
+				).then(({ json: { data } }) => ({ data }));
+			},
+			create: (resource, { data = {}, ...params }) =>
+				this.httpClient(this.authProvider, generateURL({ resource }), {
+					body: JSON.stringify(data),
+				}).then(({ json: { data } }) => ({ data })),
+		} as RaDataProvider;
+	}
+}

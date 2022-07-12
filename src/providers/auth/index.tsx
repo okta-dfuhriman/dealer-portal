@@ -1,9 +1,7 @@
+import md5 from 'blueimp-md5';
 import type { AuthProvider as RaAuthProvider, UserIdentity } from 'react-admin';
 import { OktaAuth } from '@okta/okta-auth-js';
-import type { UserClaims, AccessToken } from '@okta/okta-auth-js';
-import md5 from 'blueimp-md5';
-
-import { authConfig } from 'config';
+import type { Tokens, UserClaims, AccessToken } from '@okta/okta-auth-js';
 
 const silentAuth = async (
 	sdk: OktaAuth,
@@ -43,117 +41,144 @@ const silentAuth = async (
 
 const getTokens = async (sdk: OktaAuth) => await sdk.tokenManager.getTokens();
 
-const oktaAuth = new OktaAuth(authConfig.oidc);
+export default class AuthProvider {
+	oktaAuth: OktaAuth;
+	constructor(oktaAuth: OktaAuth) {
+		this.oktaAuth = oktaAuth;
+	}
 
-oktaAuth.start();
+	init() {
+		return {
+			// called when the user attempts to log in
+			login: () => {
+				if (this.oktaAuth.isLoginRedirect()) {
+					console.info('Handling login redirect!');
+					this.oktaAuth.setOriginalUri(window.location.origin);
 
-const AuthProvider = {
-	// called when the user attempts to log in
-	login: () => {
-		if (oktaAuth.isLoginRedirect()) {
-			console.info('Handling login redirect!');
-			oktaAuth.setOriginalUri(window.location.origin);
-
-			return oktaAuth.handleLoginRedirect();
-		}
-		console.info('Handling sign in w/ redirect!');
-		return oktaAuth.signInWithRedirect();
-	},
-	// called when the user clicks on the logout button
-	// logout: () => {
-	// 	console.log('logout');
-	// 	return Promise.resolve();
-	// },
-	logout: () => {
-		return oktaAuth.isAuthenticated().then((isAuthenticated) => {
-			if (isAuthenticated) {
-				return oktaAuth.signOut();
-			}
-			return Promise.resolve();
-		});
-	},
-	// called when the API returns an error
-	checkError: ({ status }: { message: string; status: number }) => {
-		if (status === 401 || status === 403) {
-			return Promise.reject();
-		}
-		return Promise.resolve();
-	},
-	// called when the user navigates to a new location, to check if the user is authenticated.
-	// attempts a silent authentication to try and establish a session (if one exists).
-	checkAuth: () => {
-		return oktaAuth.isAuthenticated().then((isAuthenticated) => {
-			console.log('isAuthenticated:', isAuthenticated);
-
-			if (isAuthenticated) {
-				return Promise.resolve();
-			}
-			return oktaAuth.token
-				.getWithoutPrompt()
-				.then(({ tokens }) => {
-					if (tokens) {
-						oktaAuth.tokenManager.setTokens(tokens);
-
-						return oktaAuth.authStateManager
-							.updateAuthState()
-							.then(() => Promise.resolve());
-					}
-
+					return this.oktaAuth.handleLoginRedirect();
+				}
+				console.info('Handling sign in w/ redirect!');
+				return this.oktaAuth.signInWithRedirect();
+			},
+			// called when the user clicks on the logout button
+			// logout: () => {
+			// 	console.log('logout');
+			// 	return Promise.resolve();
+			// },
+			logout: () => {
+				return this.oktaAuth
+					.isAuthenticated()
+					.then((isAuthenticated) => {
+						if (isAuthenticated) {
+							return this.oktaAuth.signOut();
+						}
+						return Promise.resolve();
+					});
+			},
+			// called when the API returns an error
+			checkError: ({ status }: { message: string; status: number }) => {
+				if (status === 401 || status === 403) {
 					return Promise.reject();
-				})
-				.catch(() => Promise.reject({ message: false }));
-		});
-	},
-	// called when the user navigates to a new location, to check for permissions / roles
-	getPermissions: () => Promise.resolve(),
-	getIdentity: () => {
-		return oktaAuth.isAuthenticated().then((isAuthenticated) => {
-			if (!isAuthenticated) {
-				return Promise.reject();
-			}
+				}
+				return Promise.resolve();
+			},
+			// called when the user navigates to a new location, to check if the user is authenticated.
+			// attempts a silent authentication to try and establish a session (if one exists).
+			checkAuth: () => {
+				return this.oktaAuth
+					.isAuthenticated()
+					.then((isAuthenticated) => {
+						console.log('isAuthenticated:', isAuthenticated);
 
-			return oktaAuth
-				.getUser()
-				.then((userInfo: UserClaims) => {
-					const { sub: id, email, picture } = userInfo;
+						if (isAuthenticated) {
+							return Promise.resolve();
+						}
+						return this.oktaAuth.token
+							.getWithoutPrompt()
+							.then(({ tokens }) => {
+								if (tokens) {
+									this.oktaAuth.tokenManager.setTokens(
+										tokens
+									);
 
-					let avatar = picture;
+									return this.oktaAuth.authStateManager
+										.updateAuthState()
+										.then(() => Promise.resolve());
+								}
 
-					if (!avatar) {
-						try {
-							const hashedEmail = md5(email!.trim());
+								return Promise.reject();
+							})
+							.catch(() => Promise.reject({ message: false }));
+					});
+			},
+			// called when the user navigates to a new location, to check for permissions / roles
+			getPermissions: () => {
+				return this.oktaAuth
+					.isAuthenticated()
+					.then((isAuthenticated) => {
+						if (!isAuthenticated) {
+							return Promise.reject();
+						}
 
-							avatar = `https://www.gravatar.com/avatar/${hashedEmail}?d=identicon`;
-						} catch {}
-					}
+						return this.oktaAuth.tokenManager
+							.getTokens()
+							.then((tokens: Tokens) =>
+								Promise.resolve(
+									tokens?.accessToken?.scopes || []
+								)
+							);
+					});
+			},
+			getIdentity: () => {
+				return this.oktaAuth
+					.isAuthenticated()
+					.then((isAuthenticated) => {
+						if (!isAuthenticated) {
+							return Promise.reject();
+						}
 
-					return {
-						...userInfo,
-						id,
-						avatar,
-					} as UserIdentity;
-				})
-				.then((user) => Promise.resolve(user))
-				.catch(() => Promise.reject());
-		});
-	},
-	getAccessToken: (decode: boolean = false) => {
-		let result: string | AccessToken | undefined;
+						return this.oktaAuth
+							.getUser()
+							.then((userInfo: UserClaims) => {
+								const { sub: id, email, picture } = userInfo;
 
-		if (decode) {
-			getTokens(oktaAuth).then(
-				({ accessToken }) => (result = accessToken)
-			);
-		} else {
-			result = oktaAuth.getAccessToken();
-		}
+								let avatar = picture;
 
-		if (!result) {
-			Promise.reject();
-		}
+								if (!avatar) {
+									try {
+										const hashedEmail = md5(email!.trim());
 
-		return Promise.resolve(result);
-	},
-} as RaAuthProvider;
+										avatar = `https://www.gravatar.com/avatar/${hashedEmail}?d=identicon`;
+									} catch {}
+								}
 
-export default AuthProvider;
+								return {
+									...userInfo,
+									id,
+									avatar,
+								} as UserIdentity;
+							})
+							.then((user) => Promise.resolve(user))
+							.catch(() => Promise.reject());
+					});
+			},
+			getAccessToken: (decode: boolean = false) => {
+				let result: string | AccessToken | undefined;
+
+				if (decode) {
+					getTokens(this.oktaAuth).then(
+						({ accessToken }) => (result = accessToken)
+					);
+				} else {
+					result = this.oktaAuth.getAccessToken();
+				}
+
+				if (!result) {
+					Promise.reject();
+				}
+
+				return Promise.resolve(result);
+			},
+		} as RaAuthProvider;
+	}
+}
