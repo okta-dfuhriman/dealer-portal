@@ -1,35 +1,19 @@
 import React from 'react';
 import Box from '@mui/material/Box';
+import { LabelOutlined as DefaultIcon } from '@mui/icons-material';
+
 import {
-	People as PeopleIcon,
-	TimeToLeave as DealerIcon,
-} from '@mui/icons-material';
-
-import { useTranslate, MenuItemLink, useSidebarState } from 'react-admin';
-import type { MenuProps } from 'react-admin';
-
-// import visitors from '../visitors';
-// import orders from '../orders';
-// import invoices from '../invoices';
-// import products from '../products';
-// import categories from '../categories';
-// import reviews from '../reviews';
-// import SubMenu from './SubMenu';
-
-type MenuName = 'menuCatalog' | 'menuSales' | 'menuCustomers';
+	useTranslate,
+	MenuItemLink,
+	useSidebarState,
+	useResourceDefinitions,
+} from 'react-admin';
+import type { MenuProps, ResourceDefinition } from 'react-admin';
 
 const Menu = ({ dense = false }: MenuProps) => {
-	const [state, setState] = React.useState({
-		menuCatalog: true,
-		menuSales: true,
-		menuCustomers: true,
-	});
+	const resources = useResourceDefinitions();
 	const translate = useTranslate();
 	const [open] = useSidebarState();
-
-	const handleToggle = (menu: MenuName) => {
-		setState((state) => ({ ...state, [menu]: !state[menu] }));
-	};
 
 	return (
 		<Box
@@ -44,24 +28,21 @@ const Menu = ({ dense = false }: MenuProps) => {
 					}),
 			}}
 		>
-			<MenuItemLink
-				to='/users'
-				state={{ _scrollToTop: true }}
-				primaryText={translate(`resources.users.name`, {
-					smart_count: 2,
-				})}
-				leftIcon={<PeopleIcon />}
-				dense={dense}
-			/>
-			<MenuItemLink
-				to='/dealerships'
-				state={{ _scrollToTop: true }}
-				primaryText={translate(`resources.dealerships.name`, {
-					smart_count: 2,
-				})}
-				leftIcon={<DealerIcon />}
-				dense={dense}
-			/>
+			{Object.keys(resources).map((resource) => (
+				<MenuItemLink
+					key={resource}
+					to={`/${resource}`}
+					state={{ _scrollToTop: true }}
+					primaryText={translate(`resources.${resource}.name`, {
+						smart_count: 2,
+					})}
+					leftIcon={React.createElement(
+						resources[resource as keyof ResourceDefinition].icon ||
+							DefaultIcon
+					)}
+					dense={dense}
+				/>
+			))}
 		</Box>
 	);
 };

@@ -19,7 +19,6 @@ import {
 import SettingsIcon from '@mui/icons-material/Settings';
 
 import Logo from './Logo';
-import { LoginButton } from 'components';
 
 const ConfigurationMenu = React.forwardRef((props, ref) => {
 	const translate = useTranslate();

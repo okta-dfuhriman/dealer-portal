@@ -12,7 +12,7 @@ import Avatar from './Avatar';
 const UsersList = () => (
 	<List
 		title='Users'
-		perPage={50}
+		perPage={25}
 		sort={{ field: 'profile.lastName', order: 'ASC' }}
 	>
 		<Datagrid size='medium' optimized>
