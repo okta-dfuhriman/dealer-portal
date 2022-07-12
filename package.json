@@ -61,6 +61,6 @@
 		"vite-tsconfig-paths": "^3.5.0"
 	},
 	"engines": {
-		"node": ">=17.5"
+		"node": ">=16"
 	}
 }
