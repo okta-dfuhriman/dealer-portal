@@ -5,6 +5,8 @@ import type {
 	UserProfile as OktaUserProfile,
 	GroupProfile as OktaGroupProfile,
 	GroupType as OktaGroupType,
+	CreateUserRequest as OktaCreateUserRequest,
+	Collection,
 } from '@okta/okta-sdk-nodejs';
 import type { RequestOptions } from '@okta/okta-sdk-nodejs/src/types/request-options';
 import { ApiError } from './_common';
@@ -38,6 +40,10 @@ export interface UserProfile extends Partial<OktaUserProfile> {
 	profilePicture?: string;
 }
 
+export interface CreateUserProfile extends UserProfile {
+	email: string;
+}
+
 export type GroupProfile = OktaGroupProfile & {
 	rawName?: string;
 	domain?: string;
@@ -46,7 +52,12 @@ export type GroupProfile = OktaGroupProfile & {
 	[key: string]: string | undefined;
 };
 
-export interface User extends Omit<OktaUser, '_embedded' | '_links'> {}
+export interface User
+	extends Omit<OktaUser, '_embedded' | '_links' | 'profile'> {
+	_embedded?: any;
+	_links?: any;
+	profile: UserProfile;
+}
 
 export interface OktaConfig {
 	orgUrl: string;
@@ -111,14 +122,7 @@ export default class OktaClient extends Client {
 			const user = (await this.getUser(id)) as any;
 			console.log(user);
 
-			const profile = await this.cleanProfile(
-				user.profile as OktaUserProfile
-			);
-
-			delete user._links;
-			delete user.profile;
-
-			return { ...user, profile } as User;
+			return await this.cleanUser(user);
 		} catch (error: any) {
 			throw new Error(error);
 		}
@@ -127,18 +131,33 @@ export default class OktaClient extends Client {
 	async getUsers(options: GetUsersOptions) {
 		const users: User[] = [];
 
-		for await (let user of this.listUsers(
+		let user: OktaUser | null;
+
+		for await (user of this.listUsers(
 			JSON.parse(JSON.stringify(options))
-		) as any) {
-			const profile = await this.cleanProfile(user!.profile);
-
-			delete user._links;
-			delete user.profile;
-
-			users.push({ ...user, profile });
+		)) {
+			if (user) {
+				users.push(await this.cleanUser(user));
+			}
 		}
 
 		return users;
+	}
+
+	async createOktaUser(createUserRequest: CreateUserProfile) {
+		const user = await this.createUser(
+			{ profile: createUserRequest },
+			{ activate: true }
+		);
+
+		if (!user) {
+			throw new ApiError({
+				statusCode: 500,
+				message: 'Unable to create user!',
+			});
+		}
+
+		return await this.cleanUser(user);
 	}
 
 	async getDealerships() {
@@ -223,31 +242,33 @@ export default class OktaClient extends Client {
 		return `https://www.gravatar.com/avatar/${hashedEmail}?d=identicon`;
 	}
 
-	async cleanProfile(profile: UserProfile) {
-		const result: UserProfile = {};
+	async cleanUser(user: OktaUser) {
+		const _user = user as User;
+
+		delete _user?._embedded;
+		delete _user?._links;
+
+		let profile = {};
 
 		let key: keyof UserProfile;
 
-		for (key in profile) {
-			if (!_.isEmpty(profile[key])) {
-				result[key] = profile[key];
+		for (key in _user.profile) {
+			if (!_.isEmpty(_user.profile[key])) {
+				profile[key] = _user.profile[key];
 			}
 		}
 
-		const {
-			displayName: name,
-			firstName,
-			lastName,
-			profilePicture: picture,
-			email,
-		} = result;
+		const { displayName, firstName, lastName, profilePicture, email } =
+			profile as UserProfile;
 
-		result.profilePicture = picture || (await this.getAvatar(email!));
-
-		if (!name && firstName && lastName) {
-			result.displayName = `${firstName} ${lastName}`;
+		if (!profilePicture) {
+			profile['profilePicture'] = await this.getAvatar(email!);
 		}
 
-		return result;
+		if (!displayName && firstName && lastName) {
+			profile['displayName'] = `${firstName} ${lastName}`;
+		}
+
+		return { ..._user, profile } as User;
 	}
 }

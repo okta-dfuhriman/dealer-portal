@@ -1,5 +1,6 @@
 import { DataProvider as RaDataProvider, fetchUtils } from 'react-admin';
 import type { AuthProvider, Options } from 'react-admin';
+import type { UserProfile } from '@okta/okta-sdk-nodejs';
 
 const ORIGIN =
 	import.meta.env.VITE_APP_API_ORIGIN || window.location.origin + '/api/v1';
@@ -13,6 +14,10 @@ export interface SearchParams {
 	sortBy?: string;
 	sortOrder?: 'asc' | 'desc';
 	id?: string;
+}
+
+export interface CreateParams {
+	data?: Partial<UserProfile> & { [key: string]: any };
 }
 
 export type HttpClient = (
@@ -45,7 +50,7 @@ const generateURL = ({ resource, url, params }: GenerateURLOptions) => {
 	const baseUrl = url || window.location.origin + '/api/v1/';
 
 	if (params) {
-		if (params.id) {
+		if ('id' in params) {
 			path = resource + '/' + params.id;
 		} else {
 			path =
@@ -128,6 +133,10 @@ const DataProvider = (
 				generateURL({ resource, params: { search } })
 			).then(({ json: { data } }) => ({ data }));
 		},
+		create: (resource, { data = {}, ...params }) =>
+			httpClient(authProvider, generateURL({ resource }), {
+				body: JSON.stringify(data),
+			}).then(({ json: { data } }) => ({ data })),
 	};
 };
 

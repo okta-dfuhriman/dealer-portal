@@ -51,10 +51,12 @@ const AuthProvider = {
 	// called when the user attempts to log in
 	login: () => {
 		if (oktaAuth.isLoginRedirect()) {
+			console.info('Handling login redirect!');
 			oktaAuth.setOriginalUri(window.location.origin);
 
 			return oktaAuth.handleLoginRedirect();
 		}
+		console.info('Handling sign in w/ redirect!');
 		return oktaAuth.signInWithRedirect();
 	},
 	// called when the user clicks on the logout button
@@ -124,8 +126,6 @@ const AuthProvider = {
 							avatar = `https://www.gravatar.com/avatar/${hashedEmail}?d=identicon`;
 						} catch {}
 					}
-
-					console.log('avatar:', avatar);
 
 					return {
 						...userInfo,

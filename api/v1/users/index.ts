@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { doAuthZ, OktaClient, GetUsersOptions } from '../../_common';
+import { doAuthZ, OktaClient } from '../../_common';
+import type { CreateUserProfile, GetUsersOptions } from '../../_common';
 
 const getUsers = async (req: VercelRequest, res: VercelResponse) => {
 	try {
@@ -51,6 +52,24 @@ const getUsers = async (req: VercelRequest, res: VercelResponse) => {
 	}
 };
 
+const createUser = async (req: VercelRequest, res: VercelResponse) => {
+	const body: CreateUserProfile = req?.body;
+
+	const client = new OktaClient();
+
+	const user = await client.createOktaUser(body);
+
+	if (!user) {
+		return res
+			.status(500)
+			.send(
+				'User was not returned after creation. The user may, or may not, have actually been created.'
+			);
+	}
+
+	return res.json({ data: user });
+};
+
 module.exports = async (req: VercelRequest, res: VercelResponse) => {
 	try {
 		const { method } = req;
@@ -64,12 +83,15 @@ module.exports = async (req: VercelRequest, res: VercelResponse) => {
 				return res.status(501).send('');
 		}
 	} catch (error: any) {
+		if (error instanceof Error) {
+			return res.status(500).json(error.toString());
+		}
 		return res
 			.status(
 				typeof error?.statusCode === 'string'
 					? parseInt(error.statusCode)
 					: error.statusCode || 500
 			)
-			.json(error);
+			.json(typeof error === 'string' ? error : error.toString());
 	}
 };

@@ -1,6 +1,7 @@
 export type {
 	Dealership,
 	UserProfile,
+	CreateUserProfile,
 	GroupProfile,
 	User,
 	OktaConfig,

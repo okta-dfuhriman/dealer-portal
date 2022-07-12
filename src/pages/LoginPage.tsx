@@ -5,6 +5,7 @@ const LoginPage = () => {
 	const login = useLogin();
 
 	React.useInsertionEffect(() => {
+		console.info('Login page: Doing login()');
 		login({});
 	});
 
