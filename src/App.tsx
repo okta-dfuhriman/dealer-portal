@@ -9,7 +9,7 @@ import {
 
 import Theme from 'styles/theme';
 import Languages from 'i18n';
-import { DealershipList, Layout, UserList } from 'components';
+import { DealershipList, Layout, UserList, UserCreate } from 'components';
 import { LoginPage } from 'pages';
 import { AuthProvider, DataProvider } from 'providers';
 import { authConfig } from 'config';
@@ -44,6 +44,7 @@ const resources = [
 	<Resource
 		name='users'
 		list={UserList}
+		create={UserCreate}
 		icon={PeopleIcon}
 		options={{ label: 'Users' }}
 	/>,

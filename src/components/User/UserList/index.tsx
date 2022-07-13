@@ -7,13 +7,15 @@ import {
 	WrapperField,
 } from 'react-admin';
 
-import Avatar from './Avatar';
+import Avatar from '../Avatar';
+import ListActions from './UserListActions';
 
 const UsersList = () => (
 	<List
 		title='Users'
 		perPage={25}
 		sort={{ field: 'profile.lastName', order: 'ASC' }}
+		actions={<ListActions />}
 	>
 		<Datagrid size='medium' optimized>
 			<WrapperField label='User' sortBy='profile.lastName'>
