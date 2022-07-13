@@ -4,9 +4,9 @@ import type {
 	User as OktaUser,
 	UserProfile as OktaUserProfile,
 	GroupProfile as OktaGroupProfile,
-	GroupType as OktaGroupType,
-	CreateUserRequest as OktaCreateUserRequest,
-	Collection,
+	GroupRuleOptions,
+	GroupOptions,
+	Group as OktaGroup,
 } from '@okta/okta-sdk-nodejs';
 import type { RequestOptions } from '@okta/okta-sdk-nodejs/src/types/request-options';
 import { ApiError } from './_common';
@@ -25,16 +25,11 @@ const {
 
 const SCOPES = SERVICE_SCOPES.split(' ') || [];
 
-export interface Dealership {
+export interface Dealership
+	extends Omit<Partial<OktaGroup>, '_embedded' | '_links' | 'profile'> {
 	_embedded?: { [name: string]: unknown };
 	_links?: { [name: string]: unknown };
-	readonly created: string;
-	readonly id: string;
-	readonly lastMembershipUpdated: string;
-	readonly lastUpdated: string;
-	readonly objectClass: string[];
-	profile: GroupProfile;
-	readonly type: OktaGroupType;
+	profile: DealerProfile | OktaGroupProfile;
 }
 export interface UserProfile extends Partial<OktaUserProfile> {
 	profilePicture?: string;
@@ -44,7 +39,13 @@ export interface CreateUserProfile extends UserProfile {
 	email: string;
 }
 
-export type GroupProfile = OktaGroupProfile & {
+export interface CreateDealerRequest {
+	name: string;
+	description?: string;
+	domain?: string;
+}
+
+export type DealerProfile = OktaGroupProfile & {
 	rawName?: string;
 	domain?: string;
 	name?: string;
@@ -122,7 +123,7 @@ export default class OktaClient extends Client {
 			const user = (await this.getUser(id)) as any;
 			console.log(user);
 
-			return await this.cleanUser(user);
+			return await this.parseUser(user);
 		} catch (error: any) {
 			throw new Error(error);
 		}
@@ -137,7 +138,7 @@ export default class OktaClient extends Client {
 			JSON.parse(JSON.stringify(options))
 		)) {
 			if (user) {
-				users.push(await this.cleanUser(user));
+				users.push(await this.parseUser(user));
 			}
 		}
 
@@ -161,7 +162,7 @@ export default class OktaClient extends Client {
 			});
 		}
 
-		return await this.cleanUser(user);
+		return await this.parseUser(user);
 	}
 
 	async getDealerships() {
@@ -182,14 +183,14 @@ export default class OktaClient extends Client {
 		const dealerships: Dealership[] = [];
 
 		for (let i = 0; i < body.length; i++) {
-			dealerships.push(await this.cleanDealership(body[i]));
+			dealerships.push(await this.parseDealership(body[i]));
 		}
 
 		return dealerships;
 	}
 
 	async getDealership(id: string) {
-		return await this.cleanDealership(
+		return await this.parseDealership(
 			(await this.getGroup(id)) as unknown as Dealership
 		);
 	}
@@ -219,20 +220,61 @@ export default class OktaClient extends Client {
 		return logo;
 	}
 
-	async cleanDealership(dealer: Dealership) {
+	async createDealership(createDealerRequest: CreateDealerRequest) {
+		// 1) Create the group and parse the response.
+		const oktaGroup = await this.createGroup({
+			profile: { ...createDealerRequest },
+		});
+		const group = await this.parseDealership(oktaGroup as Dealership);
+
+		const {
+			id,
+			profile: { name },
+		} = group;
+
+		// 2) Generate the options
+		const ruleOptions = {
+			name: `Dealer_${name}`,
+			type: 'group_rule',
+			conditions: {
+				expression: {
+					type: 'urn:okta:expression:1.0',
+					value: `user.Dealer==\"${name}\"`,
+				},
+			},
+			actions: {
+				assignUserToGroups: {
+					groupIds: [id],
+				},
+			},
+		} as GroupRuleOptions;
+
+		// 3) Create the group rule
+		const rule = await this.createGroupRule(ruleOptions);
+
+		// 4) Activate the group rule
+		if (rule?.id) {
+			await this.activateGroupRule(rule.id);
+		}
+
+		return group;
+	}
+
+	async parseDealership(dealer: Dealership) {
 		delete dealer?._embedded;
 		delete dealer?._links;
 
 		const regex = /.*(?<=_)/;
 
-		const logo =
-			dealer?.profile?.logo ||
-			(await this.getDealerLogo(dealer?.profile?.domain));
+		const profile = dealer.profile as DealerProfile;
+		const domain = profile?.domain;
+
+		const logo = await this.getDealerLogo(domain);
 
 		return {
 			...dealer,
 			profile: {
-				...dealer.profile,
+				...profile,
 				rawName: dealer.profile.name,
 				name: dealer.profile.name.replace(regex, ''),
 				logo,
@@ -246,7 +288,7 @@ export default class OktaClient extends Client {
 		return `https://www.gravatar.com/avatar/${hashedEmail}?d=identicon`;
 	}
 
-	async cleanUser(user: OktaUser) {
+	async parseUser(user: OktaUser) {
 		const _user = user as User;
 
 		delete _user?._embedded;
