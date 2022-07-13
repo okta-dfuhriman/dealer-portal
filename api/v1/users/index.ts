@@ -79,6 +79,7 @@ module.exports = async (req: VercelRequest, res: VercelResponse) => {
 			case 'HEAD':
 				return await getUsers(req, res);
 			case 'POST':
+				return await createUser(req, res);
 			default:
 				return res.status(501).send('');
 		}

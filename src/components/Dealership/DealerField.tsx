@@ -1,6 +1,6 @@
 import { TextField, useRecordContext, WrapperField } from 'react-admin';
 import type { WrapperFieldProps } from 'react-admin';
-import { Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
 import DealerLogo from './DealerLogo';
 
@@ -18,16 +18,17 @@ const DealerField = (props: Omit<WrapperFieldProps, 'children'>) => {
 				<DealerLogo source='profile.logo' label='' sx={{ mr: 1.5 }} />
 				<TextField
 					source='profile.name'
-					label='Name'
+					label='MTS Code'
 					sx={{ pr: 0.5 }}
 				/>
 				{record?.profile?.description && (
 					<>
-						<br></br>
-						<br></br>
-						<Typography variant='caption'>
-							{record.profile.description}
-						</Typography>
+						-
+						<TextField
+							source='profile.description'
+							label='Name'
+							sx={{ pl: 0.5 }}
+						/>
 					</>
 				)}
 			</div>

@@ -16,9 +16,9 @@ interface DealerChoice extends Partial<SelectChoice> {
 interface Role extends SelectChoice {}
 
 const dealerships = [
-	{ _id: '01', mts: '02003' },
-	{ _id: '02', mts: '02032' },
-	{ _id: '03', mts: '02033', name: 'Gilland Mitsubishi' },
+	{ id: '01', mts: '02003' },
+	{ id: '00g1jsmomcglJ5DO4697', mts: '02032', name: 'Universal Mitsubishi' },
+	{ id: '00g1jsa7e1rtflSrY697', mts: '02033', name: 'Gilland Mitsubishi' },
 ];
 
 const roles = [

@@ -145,6 +145,10 @@ export default class OktaClient extends Client {
 	}
 
 	async createOktaUser(createUserRequest: CreateUserProfile) {
+		if (!createUserRequest?.login) {
+			createUserRequest['login'] = createUserRequest.email;
+		}
+
 		const user = await this.createUser(
 			{ profile: createUserRequest },
 			{ activate: true }

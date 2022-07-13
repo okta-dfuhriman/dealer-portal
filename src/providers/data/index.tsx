@@ -150,6 +150,7 @@ export default class DataProvider {
 			},
 			create: (resource, { data = {}, ...params }) =>
 				this.httpClient(this.authProvider, generateURL({ resource }), {
+					method: 'post',
 					body: JSON.stringify(data),
 				}).then(({ json: { data } }) => ({ data })),
 		} as RaDataProvider;
