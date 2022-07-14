@@ -1,72 +1,13 @@
-import { fetchUtils } from 'react-admin';
 import type {
 	AuthProvider,
 	DataProvider as RaDataProvider,
-	Options,
+	DeleteParams,
 } from 'react-admin';
-import type { UserProfile } from '@okta/okta-sdk-nodejs';
 
-const ORIGIN =
-	import.meta.env.VITE_APP_API_ORIGIN || window.location.origin + '/api/v1';
+import HttpClient from './HttpClient';
+import type { SearchParams } from './HttpClient';
 
-export interface SearchParams {
-	q?: string;
-	after?: string;
-	limit?: number;
-	filter?: string;
-	search?: string;
-	sortBy?: string;
-	sortOrder?: 'asc' | 'desc';
-	id?: string;
-}
-
-export interface CreateParams {
-	data?: Partial<UserProfile> & { [key: string]: any };
-}
-
-export type HttpClient = (
-	authProvider: AuthProvider,
-	url: string | URL,
-	options?: Options
-) => Promise<{ status: number; headers: Headers; body: string; json: any }>;
-
-const _httpClient: HttpClient = ({ getAccessToken }, url, options = {}) => {
-	// get accessToken
-	return getAccessToken().then((accessToken: string) => {
-		options.user = {
-			authenticated: true,
-			token: `Bearer ${accessToken}`,
-		};
-
-		return fetchUtils.fetchJson(url, options);
-	});
-};
-
-type GenerateURLOptions = {
-	resource: string;
-	url?: string;
-	params?: SearchParams;
-};
-
-const generateURL = ({ resource, url, params }: GenerateURLOptions) => {
-	let path = resource;
-
-	const baseUrl = url || window.location.origin + '/api/v1/';
-
-	if (params) {
-		if ('id' in params) {
-			path = resource + '/' + params.id;
-		} else {
-			path =
-				resource +
-				'?' +
-				new URLSearchParams(Object.entries(params))?.toString();
-		}
-	}
-
-	return new URL(path, baseUrl);
-};
-
+// const ORIGIN = import.meta.env.VITE_APP_API_ORIGIN || window.location.origin + '/api/v1';
 export default class DataProvider {
 	authProvider: AuthProvider;
 	httpClient: HttpClient;
@@ -74,10 +15,10 @@ export default class DataProvider {
 	constructor(
 		authProvider: AuthProvider,
 		url?: string,
-		httpClient: HttpClient = _httpClient
+		httpClient?: HttpClient
 	) {
 		this.authProvider = authProvider;
-		this.httpClient = httpClient;
+		this.httpClient = httpClient || new HttpClient(authProvider);
 		this.url = url;
 	}
 
@@ -109,29 +50,15 @@ export default class DataProvider {
 				// const search =
 				// const filter =
 
-				const _url = generateURL({
-					resource,
-					params: searchParams,
-					url: this.url,
-				});
-
 				if (page || filter) {
 					console.warn(
 						'Pagination and filtering has not been implemented!'
 					);
 				}
 
-				return this.httpClient(this.authProvider, _url).then(
-					({ json }) => ({
-						...json,
-					})
-				);
+				return this.httpClient.get(resource, searchParams);
 			},
-			getOne: (resource, params) =>
-				this.httpClient(
-					this.authProvider,
-					generateURL({ resource, params })
-				).then(({ json: { data } }) => ({ data })),
+			getOne: (resource, params) => this.httpClient.get(resource, params),
 			getMany: (resource, params) => {
 				const { ids } = params || {};
 
@@ -143,16 +70,23 @@ export default class DataProvider {
 
 				const search = searchValues.join(' OR ');
 
-				return this.httpClient(
-					this.authProvider,
-					generateURL({ resource, params: { search } })
-				).then(({ json: { data } }) => ({ data }));
+				return this.httpClient.get(resource, params);
 			},
+			getManyReference: (resource, params) =>
+				Promise.resolve({ data: [] }),
+			update: (resource, params) => Promise.resolve({ data: {} }),
+			updateMany: (resource, params) => Promise.resolve({ data: [] }),
 			create: (resource, { data = {}, ...params }) =>
-				this.httpClient(this.authProvider, generateURL({ resource }), {
-					method: 'post',
-					body: JSON.stringify(data),
-				}).then(({ json: { data } }) => ({ data })),
+				this.httpClient.post(resource, { data }),
+			delete: (resource, params) =>
+				this.httpClient.delete(resource, params),
+			// API does not handle deleteMany so just calling `delete` n times
+			deleteMany: (resource, params) =>
+				Promise.all(
+					params.ids.map((id) =>
+						this.httpClient.delete(resource, { id })
+					)
+				),
 		} as RaDataProvider;
 	}
 }

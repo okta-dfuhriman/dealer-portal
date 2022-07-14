@@ -2,7 +2,7 @@ import { TextField, useRecordContext, WrapperField } from 'react-admin';
 import type { WrapperFieldProps } from 'react-admin';
 import { Box, Typography } from '@mui/material';
 
-import DealerLogo from './DealerLogo';
+import DealerLogo from '../DealerLogo';
 
 const DealerField = (props: Omit<WrapperFieldProps, 'children'>) => {
 	const record = useRecordContext();

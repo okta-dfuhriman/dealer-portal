@@ -4,7 +4,7 @@ import { doAuthZ, OktaClient, ApiError } from '../../../_common';
 
 const getDealership = async (req: VercelRequest, res: VercelResponse) => {
 	// 1) Validate the accessToken
-	const accessToken = await doAuthZ(req, res, ['dealers:read']);
+	const accessToken = await doAuthZ(req, res, ['dealerships:read']);
 
 	const client = new OktaClient();
 

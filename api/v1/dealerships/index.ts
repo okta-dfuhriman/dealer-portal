@@ -5,7 +5,7 @@ import type { CreateDealerRequest } from '../../_common';
 
 const getDealerships = async (req: VercelRequest, res: VercelResponse) => {
 	// 1) Validate the accessToken
-	const accessToken = await doAuthZ(req, res, ['dealers:read']);
+	const accessToken = await doAuthZ(req, res, ['dealerships:read']);
 
 	const client = new OktaClient();
 
@@ -43,7 +43,7 @@ const getDealerships = async (req: VercelRequest, res: VercelResponse) => {
 
 const createDealership = async (req: VercelRequest, res: VercelResponse) => {
 	// 1) Validate the accessToken
-	const accessToken = await doAuthZ(req, res, ['dealers:create']);
+	const accessToken = await doAuthZ(req, res, ['dealerships:create']);
 
 	const client = new OktaClient();
 

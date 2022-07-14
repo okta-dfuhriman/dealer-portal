@@ -2,14 +2,11 @@ import { Admin, Resource } from 'react-admin';
 // import { QueryClient, QueryClientConfig } from 'react-query';
 import { OktaAuth } from '@okta/okta-auth-js';
 import polyglotI18nProvider from 'ra-i18n-polyglot';
-import {
-	People as PeopleIcon,
-	TimeToLeave as DealerIcon,
-} from '@mui/icons-material';
 
 import Theme from 'styles/theme';
 import Languages from 'i18n';
-import { DealershipList, Layout, UserList, UserCreate } from 'components';
+import { Layout } from 'components';
+import Resources from 'resources';
 import { LoginPage } from 'pages';
 import { AuthProvider, DataProvider } from 'providers';
 import { authConfig } from 'config';
@@ -40,32 +37,29 @@ const i18nProvider = polyglotI18nProvider((locale) => {
 	return Languages.en;
 }, 'en');
 
-const resources = [
-	<Resource
-		name='users'
-		list={UserList}
-		create={UserCreate}
-		icon={PeopleIcon}
-		options={{ label: 'Users' }}
-	/>,
-	<Resource
-		name='dealerships'
-		list={DealershipList}
-		icon={DealerIcon}
-		options={{ label: 'Dealers' }}
-	/>,
-];
+// const resources = [
+// 	<Resource
+// 		name='users'
+// 		list={UserList}
+// 		create={UserCreate}
+// 		icon={PeopleIcon}
+// 		options={{ label: 'Users' }}
+// 	/>,
+// 	<Resource
+// 		name='dealerships'
+// 		create={DealershipCreate}
+// 		list={DealershipList}
+// 		icon={DealerIcon}
+// 		options={{ label: 'Dealers' }}
+// 	/>,
+// ];
 
 const renderResources = (permissions: string[] = []) => {
-	return resources.filter((resource) => {
-		switch (resource.props.name) {
-			case 'users':
-				return permissions.includes('user:read');
-			case 'dealerships':
-				return permissions.includes('dealers:read');
-			default:
-				return <></>;
+	return Resources.map((props) => {
+		if (permissions.includes(`${props.name}:read`)) {
+			return <Resource {...props} />;
 		}
+		return <></>;
 	});
 };
 

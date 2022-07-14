@@ -3,8 +3,12 @@ import { doAuthZ, OktaClient } from '../../../_common';
 
 const getUser = async (req: VercelRequest, res: VercelResponse) => {
 	try {
+		const {
+			query: { id },
+		} = req;
 		// 1) Validate the accessToken
-		const accessToken = await doAuthZ(req, res, ['user:read:self']);
+		// const accessToken = await doAuthZ(req, res, ['users:read:self']);
+		const accessToken = await doAuthZ(req, res, ['users:read']);
 
 		const client = new OktaClient();
 
@@ -12,7 +16,7 @@ const getUser = async (req: VercelRequest, res: VercelResponse) => {
 			return res.status(401).send('Unauthorized');
 		}
 
-		const user = await client.getOktaUser(accessToken.uid as string);
+		const user = await client.getOktaUser(id as string);
 
 		if (!user) {
 			throw new Error('Unable to find user!');
@@ -45,12 +49,17 @@ const getUser = async (req: VercelRequest, res: VercelResponse) => {
 
 module.exports = async (req: VercelRequest, res: VercelResponse) => {
 	try {
-		const { method } = req;
+		const {
+			method,
+			query: { id },
+		} = req;
 
 		switch (method) {
 			case 'GET':
 			case 'HEAD':
-				return await getUser(req, res);
+				if (id) {
+					return await getUser(req, res);
+				}
 			case 'POST':
 			// return await updateUser(req, res);
 			default:

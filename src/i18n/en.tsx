@@ -7,11 +7,11 @@ const customEnglishMessages: TranslationMessages = {
 		...englishMessages.ra,
 		action: {
 			...englishMessages.ra.action,
-			create: 'Add %{name}',
+			create: 'Add',
 		},
 		page: {
 			...englishMessages.ra.page,
-			create: 'Add %{name}',
+			create: 'Add',
 		},
 		message: {
 			...englishMessages.ra.message,
@@ -39,14 +39,11 @@ const customEnglishMessages: TranslationMessages = {
 		},
 		notification: {
 			...englishMessages.ra.notification,
-			updated:
-				'%{name} sucessfully updated. |||| %{smart_count} %{name} successfully updated.',
-			created:
-				'%{name} sucessfully added. |||| %{smart_count} %{name} successfully added.',
-			deleted:
-				'%{name} sucessfully deactivated. |||| %{smart_count} %{name} successfully deactivated.',
-			bad_item: '%{name} is invalid.',
-			item_doesnt_exist: '%{name} does not exist or cannot be found.',
+			updated: 'Successfully updated.',
+			created: 'Successfully added.',
+			deleted: 'Successfully deactivated.',
+			bad_item: 'Bad. Just bad.',
+			item_doesnt_exist: 'The thing does not exist or cannot be found.',
 			logged_out:
 				'You have been logged out. Please sign in again to continue.',
 			not_authorized: 'You are not authorized to access this resource.',
@@ -70,39 +67,22 @@ const customEnglishMessages: TranslationMessages = {
 		dealerships: {
 			name: 'Dealership |||| Dealerships',
 			fields: {
-				commands: 'Orders',
-				first_seen: 'First seen',
-				groups: 'Segments',
-				last_seen: 'Last seen',
-				last_seen_gte: 'Visited Since',
-				name: 'Name',
-				total_spent: 'Total spent',
-				password: 'Password',
-				confirm_password: 'Confirm password',
-				stateAbbr: 'State',
+				name: 'MTS Code',
+				description: 'Name',
+				domain: 'Website Domain',
 			},
-			filters: {},
-			fieldGroups: {
-				identity: 'Identity',
-				address: 'Address',
-				stats: 'Stats',
-				history: 'History',
-				password: 'Password',
-				change_password: 'Change Password',
-			},
-			errors: {
-				password_mismatch:
-					'The password confirmation is not the same as the password.',
+			page: {
+				edit: 'Edit Dealer',
 			},
 		},
 		users: {
 			name: 'User |||| Users',
 			fields: {
-				firstName: 'First Name',
-				lastName: 'Last Name',
-				Dealer: 'Dealership',
-				email: 'Email',
-				role: 'Role',
+				'profile.firstName': 'First Name',
+				'profile.lastName': 'Last Name',
+				'profile.Dealer': 'Dealership',
+				'profile.email': 'Email',
+				'profile.role': 'Role',
 			},
 			page: {
 				edit: 'Edit Profile',

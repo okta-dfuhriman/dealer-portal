@@ -5,7 +5,7 @@ import type { CreateUserProfile, GetUsersOptions } from '../../_common';
 const getUsers = async (req: VercelRequest, res: VercelResponse) => {
 	try {
 		// 1) Validate the accessToken
-		const accessToken = await doAuthZ(req, res, ['user:read']);
+		const accessToken = await doAuthZ(req, res, ['users:read']);
 
 		const client = new OktaClient();
 

@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { Client } from '@okta/okta-sdk-nodejs';
+import { Client, CreateUserRequest, GroupRule } from '@okta/okta-sdk-nodejs';
 import type {
 	User as OktaUser,
 	UserProfile as OktaUserProfile,
@@ -145,15 +145,12 @@ export default class OktaClient extends Client {
 		return users;
 	}
 
-	async createOktaUser(createUserRequest: CreateUserProfile) {
-		if (!createUserRequest?.login) {
-			createUserRequest['login'] = createUserRequest.email;
+	async createOktaUser({ profile }: CreateUserRequest) {
+		if (!profile.login) {
+			profile['login'] = profile.email;
 		}
 
-		const user = await this.createUser(
-			{ profile: createUserRequest },
-			{ activate: true }
-		);
+		const user = await this.createUser({ profile }, { activate: true });
 
 		if (!user) {
 			throw new ApiError({
@@ -280,6 +277,63 @@ export default class OktaClient extends Client {
 				logo,
 			},
 		} as Dealership;
+	}
+
+	async deactivateDealership(id: string, shouldDelete: boolean = false) {
+		try {
+			// 1) Fetch group
+			let group = await this.getGroup(id);
+
+			const {
+				profile: { name },
+			} = group;
+
+			// 2) Fetch associated rule
+			let groupRule = await this.getOktaGroupRule(group);
+
+			// 3) Deactivate the rule
+			const deactivateRsp = await groupRule.deactivate();
+			console.log('\ndeactivateRsp');
+			console.log(deactivateRsp);
+
+			// 4) If 'shouldDelete', delete rule and group
+			if (shouldDelete) {
+				await group.delete();
+				await groupRule.delete();
+				await this.deleteGroup(id);
+			} else {
+				// Otherwise, update names to 'DELETED'
+				groupRule.name = `DELETED_${groupRule.name}`;
+				groupRule = await groupRule.update();
+
+				group.profile.name = `DELETED_${name}`;
+				group = await group.update();
+			}
+
+			return true;
+		} catch (error: any) {
+			console.error(error);
+			return error;
+		}
+	}
+
+	async getOktaGroupRule(group: OktaGroup) {
+		const {
+			id: groupId,
+			profile: { name: groupName },
+		} = group;
+		return this.listGroupRules({ search: groupName })
+			.each((_groupRule) => {
+				const groupIds =
+					_groupRule?.actions?.assignUserToGroups?.groupIds;
+
+				if (groupIds.length === 1 && groupIds.includes(groupId)) {
+					return _groupRule;
+				} else {
+					throw new Error('Unable to find an associated group rule!');
+				}
+			})
+			.then((groupRule) => Promise.resolve(groupRule as GroupRule));
 	}
 
 	async getAvatar(email: string) {
