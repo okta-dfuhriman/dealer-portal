@@ -80,7 +80,7 @@ const UserProfile = () => (
 				{/* TODO enhance this to use AutoSelect component that supports searching all dealers via API */}
 				{/* TODO enhance to prefill the dealer option and hide it based on user's role & assigned dealer */}
 				<SelectInput
-					source='profile.Dealer'
+					source='profile.dealership'
 					choices={dealerships}
 					optionText={optionRenderer}
 					optionValue='mts'
