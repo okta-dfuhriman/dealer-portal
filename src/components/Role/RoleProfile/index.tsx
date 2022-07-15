@@ -65,7 +65,10 @@ const RoleProfile = ({
 						<DateField source='created' label='Enrolled' />
 						<DateField source='lastLogin' label='Last Login' />
 						<EmailField source='profile.email' label='Email' />
-						<TextField source='profile.Dealer' label='Dealership' />
+						<TextField
+							source='profile.dealership'
+							label='Dealership'
+						/>
 						<TextField source='profile.role' label='Role' />
 						<EditButton />
 					</Datagrid>
