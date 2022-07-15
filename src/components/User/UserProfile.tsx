@@ -22,9 +22,9 @@ const dealerships = [
 ];
 
 const roles = [
-	{ id: '01', name: 'Dealership Admin' },
-	{ id: '02', name: 'Sales' },
-	{ id: '03', name: 'Parts' },
+	{ id: '00g1hyexmfnlSsUve697', name: 'Org Admin' },
+	{ id: '00g1hy3mqpeNBIdHz697', name: 'Dealership Admin' },
+	{ id: '00g1kjvihdsCENPbm697', name: 'User' },
 ];
 
 const optionRenderer = ({ name, ...rest }: DealerChoice | Role) => {
