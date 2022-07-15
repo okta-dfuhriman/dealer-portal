@@ -86,11 +86,17 @@ export default class AuthProvider {
 			},
 			// called when the API returns an error
 			checkError: ({ status }: { message: string; status: number }) => {
-				if (status === 401 || status === 403) {
-					return Promise.reject();
-				}
+				// if (status === 401 || status === 403) {
+				// 	return Promise.reject();
+				// }
 				return Promise.resolve();
 			},
+			// checkError: ({ status }: { message: string; status: number }) => {
+			// 	if (status === 401 || status === 403) {
+			// 		return Promise.reject();
+			// 	}
+			// 	return Promise.resolve();
+			// },
 			// called when the user navigates to a new location, to check if the user is authenticated.
 			// attempts a silent authentication to try and establish a session (if one exists).
 			checkAuth: () => {

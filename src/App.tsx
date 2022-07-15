@@ -1,6 +1,6 @@
 import { Admin, CustomRoutes, Resource } from 'react-admin';
 import { Route } from 'react-router-dom';
-// import { QueryClient, QueryClientConfig } from 'react-query';
+import { QueryClient, QueryClientConfig } from 'react-query';
 import { OktaAuth } from '@okta/okta-auth-js';
 import polyglotI18nProvider from 'ra-i18n-polyglot';
 
@@ -12,18 +12,19 @@ import { LoginPage, Me } from 'pages';
 import { AuthProvider, DataProvider } from 'providers';
 import { authConfig } from 'config';
 
-// const STALE_TIME = import.meta.env.QUERY_STALE_TIME || 2.5; // Time in **MINUTES** to be used when setting the staleTime configuration.
+const STALE_TIME = import.meta.env.QUERY_STALE_TIME || 2.5; // Time in **MINUTES** to be used when setting the staleTime configuration.
 
-// const onError = (error: unknown) => console.error(error);
+const queryConfig: QueryClientConfig = {
+	defaultOptions: {
+		queries: {
+			staleTime: 1000 * 60 * STALE_TIME,
+			retry: true,
+			refetchOnWindowFocus: false,
+		},
+	},
+};
 
-// const queryConfig: QueryClientConfig = {
-// 	defaultOptions: {
-// 		mutations: { onError },
-// 		queries: { onError, staleTime: 1000 * 60 * STALE_TIME },
-// 	},
-// };
-
-// const queryClient = new QueryClient(queryConfig);
+const queryClient = new QueryClient(queryConfig);
 
 const oktaAuth = new OktaAuth(authConfig.oidc);
 
@@ -42,7 +43,20 @@ const renderResources = (permissions: string[] = []) => {
 	return Resources.map((props) => {
 		console.log('renderResources()');
 		console.log(permissions);
-		if (permissions.includes(`${props.name}:read`)) {
+		let isAllowed = false;
+
+		switch (props.name) {
+			case 'users':
+				isAllowed =
+					permissions.includes(`users:read`) ||
+					permissions.includes(`users:read:dealership`);
+				break;
+			case 'dealerships':
+			case 'roles':
+				isAllowed = permissions.includes(`${props.name}:read`);
+				break;
+		}
+		if (isAllowed) {
 			return <Resource {...props} />;
 		}
 		return <></>;
@@ -65,7 +79,7 @@ const App = () => {
 			disableTelemetry
 			theme={lightTheme}
 			ready={LoginPage}
-			// queryClient={queryClient}
+			queryClient={queryClient}
 		>
 			{renderResources}
 			<CustomRoutes>

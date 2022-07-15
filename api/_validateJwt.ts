@@ -61,7 +61,7 @@ export default class JwtValidator {
 		this.res = res;
 		this.issuer = issuer || ISSUER;
 		this.aud = aud || AUD;
-		this.alwaysDecode = alwaysDecode || false;
+		this.alwaysDecode = alwaysDecode || true;
 
 		for (const [key, value] of Object.entries(options)) {
 			const _key = key as keyof ValidateJwtOptions;
@@ -114,15 +114,22 @@ export default class JwtValidator {
 				aud
 			);
 			result.isValid = true;
-
+			console.log(assertClaims);
 			// Now, if provided, we assert the claims.
 			// This may throw, but we still want to return the decoded JWT (if decode === true)
 			if (assertClaims) {
-				result = await this.validateAccessTokenWithAssertions({
-					assertClaims,
-					issuer,
-					...options,
-				});
+				const { isValid, accessToken } =
+					await this.validateAccessTokenWithAssertions({
+						assertClaims,
+						issuer,
+						...options,
+					});
+
+				result.isValid = isValid;
+
+				if (isValid) {
+					result.accessToken = accessToken;
+				}
 
 				if (!decode && result?.accessToken) {
 					delete result.accessToken;
@@ -181,12 +188,12 @@ export default class JwtValidator {
 		}
 	}
 
-	async generateAssertions(_assertions: Assertions): Promise<AssertClaims> {
+	async generateAssertions(_assertions?: Assertions): Promise<AssertClaims> {
 		const assertions = _assertions || this?.assertions;
 
 		if ((assertions?.permissions?.length || []) > 0) {
 			return {
-				'permissions.includes': assertions.permissions,
+				'permissions.includes': assertions!.permissions,
 			};
 		}
 
@@ -200,18 +207,15 @@ export default class JwtValidator {
 			isValid: false,
 		};
 
-		if (decode) {
+		if (typeof decode !== 'undefined') {
 			this.alwaysDecode = decode;
 		}
 
 		try {
 			const issuer = this.issuer!;
-			const assertClaims = assertions
-				? ((await this.generateAssertions(assertions)) as Record<
-						string,
-						unknown
-				  >)
-				: undefined;
+			const assertClaims = (await this.generateAssertions(
+				assertions
+			)) as Record<string, unknown>;
 
 			// Attempt to validate idToken if available.
 			if (this?.idTokenString) {
@@ -225,7 +229,7 @@ export default class JwtValidator {
 			}
 
 			if (this?.accessTokenString) {
-				if (assertClaims && !decode) {
+				if (assertClaims && !this.alwaysDecode) {
 					return await this.validateAccessTokenWithAssertions({
 						assertClaims,
 						issuer,

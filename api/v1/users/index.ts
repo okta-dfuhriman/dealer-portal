@@ -1,56 +1,74 @@
 import { OktaClient, JwtValidator } from '../../_common';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import type { CreateUserRequest } from '@okta/okta-sdk-nodejs';
+import type { CreateUserRequest, User } from '@okta/okta-sdk-nodejs';
+import type { JwtClaims } from '@okta/jwt-verifier';
 import type { GetUsersOptions, ValidateResult } from '../../_common';
 
 const getUsers = async (req: VercelRequest, res: VercelResponse) => {
 	try {
 		// 1) Validate the accessToken
-		const { isValid, accessToken } = (await new JwtValidator(
+		const validator = new JwtValidator(
 			req,
 			{ assertions: { permissions: ['users:read'] } },
 			res
-		).validateTokens()) as ValidateResult;
+		);
 
-		if (!isValid || !accessToken) {
-			return res.status(401).send('Unauthorized');
-		}
+		let result = (await validator.validateTokens()) as ValidateResult;
 
 		const client = new OktaClient();
+		let data: User[] = [];
 
-		const {
-			query: { q, filter, search, limit, after, sortBy, sortOrder },
-		} = req || {};
+		const dealershipId = result?.accessToken?.claims?.dealershipId;
 
-		const _sortOrder = sortOrder?.toString();
+		console.log('isValid:', result?.isValid);
 
-		if (_sortOrder && !['asc', 'desc'].includes(_sortOrder)) {
-			return res
-				.status(400)
-				.send(
-					'Malformed request! `sortOrder` must be one of `asc` or `desc`'
-				);
+		if (!result?.isValid && dealershipId) {
+			console.log('Checking for `users:read:dealership`!');
+			result = (await validator.validateTokens(
+				{ permissions: ['users:read:dealership'] },
+				false
+			)) as ValidateResult;
+
+			if (result?.isValid) {
+				data = await client.getDealershipUsers(dealershipId);
+			}
+		} else if (!result?.isValid || !result?.accessToken) {
+			return res.status(401).send('Unauthorized');
+		} else {
+			const {
+				query: { q, filter, search, limit, after, sortBy, sortOrder },
+			} = req || {};
+
+			const _sortOrder = sortOrder?.toString();
+
+			if (_sortOrder && !['asc', 'desc'].includes(_sortOrder)) {
+				return res
+					.status(400)
+					.send(
+						'Malformed request! `sortOrder` must be one of `asc` or `desc`'
+					);
+			}
+
+			const options: GetUsersOptions = {
+				q: q?.toString(),
+				filter: filter?.toString(),
+				search: search?.toString(),
+				limit: limit ? parseInt(limit.toString()) : undefined,
+				after: after?.toString(),
+				sortBy: sortBy?.toString() || 'asc',
+				sortOrder: _sortOrder as GetUsersOptions['sortOrder'],
+			};
+
+			if (!options?.search && options?.sortBy) {
+				options.search = `${options.sortBy} pr`;
+			}
+
+			data = (await client.getUsers(options)) || [];
 		}
-
-		const options: GetUsersOptions = {
-			q: q?.toString(),
-			filter: filter?.toString(),
-			search: search?.toString(),
-			limit: limit ? parseInt(limit.toString()) : undefined,
-			after: after?.toString(),
-			sortBy: sortBy?.toString() || 'asc',
-			sortOrder: _sortOrder as GetUsersOptions['sortOrder'],
-		};
-
-		if (!options?.search && options?.sortBy) {
-			options.search = `${options.sortBy} pr`;
-		}
-
-		const users = (await client.getUsers(options)) || [];
 
 		return res.json({
-			total: users.length,
-			data: users,
+			total: data.length,
+			data,
 		});
 	} catch (error: any) {
 		throw new Error(`getUsers(): ${error}`);
