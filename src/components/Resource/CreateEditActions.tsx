@@ -19,7 +19,10 @@ const CreateEditActions = () => {
 
 	React.useEffect(() => {
 		if (permissions.length > 0) {
-			setCanEdit(permissions.includes(`${resource}:update`));
+			setCanEdit(
+				permissions.includes(`${resource}:update`) ||
+					permissions.includes(`${resource}:update:dealership`)
+			);
 		}
 	}, [permissions]);
 

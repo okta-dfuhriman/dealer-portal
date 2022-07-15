@@ -55,7 +55,7 @@ const updateUser = async (req: VercelRequest, res: VercelResponse) => {
 		// 1) Validate the accessToken
 		const validator = new JwtValidator(
 			req,
-			{ assertions: { permissions: ['users:update'] } },
+			{ assertions: { permissions: ['users:update:dealership'] } },
 			res
 		);
 
