@@ -1,6 +1,6 @@
 import { defaultTheme } from 'react-admin';
 
-const darkTheme = {
+export const darkTheme = {
 	palette: {
 		primary: {
 			main: '#90caf9',
@@ -36,7 +36,7 @@ const darkTheme = {
 	},
 };
 
-const lightTheme = {
+export const lightTheme = {
 	palette: {
 		primary: {
 			main: '#4f3cc9',
@@ -101,5 +101,3 @@ const lightTheme = {
 		},
 	},
 };
-
-export default { darkTheme, lightTheme };

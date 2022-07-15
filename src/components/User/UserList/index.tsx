@@ -5,14 +5,12 @@ import {
 	TextField,
 	DateField,
 	usePermissions,
-	WrapperField,
 } from 'react-admin';
 import type { RowClickFunction } from 'react-admin';
 import { memoize } from 'lodash';
 import type { MemoizedFunction } from 'lodash';
 
-import Avatar from '../Avatar';
-import { ListActions as UserListActions } from 'components';
+import { ListActions as UserListActions, UserLinkField } from 'components';
 
 type HandleRowClick = (permissions: string[]) => RowClickFunction;
 
@@ -48,35 +46,13 @@ const UsersList = () => {
 				optimized
 				rowClick={handleRowClick(permissions)}
 			>
-				<WrapperField label='User' sortBy='profile.lastName'>
-					<div
-						style={{
-							display: 'flex',
-							justifyContent: 'flex-start',
-						}}
-					>
-						<Avatar
-							source='profile.profilePicture'
-							label=''
-							sx={{ mr: 1.5 }}
-						/>
-						<TextField
-							source='profile.firstName'
-							label='First Name'
-							sx={{ pr: 0.5 }}
-						/>
-						<TextField
-							source='profile.lastName'
-							label='Last Name'
-						/>
-					</div>
-				</WrapperField>
+				<UserLinkField label='User' />
 				<TextField source='status' />
-				<DateField source='created' label='Enrolled' />
-				<DateField source='lastLogin' label='Last Login' />
-				<EmailField source='profile.email' label='Email' />
-				<TextField source='profile.Dealer' label='Dealership' />
-				<TextField source='profile.role' label='Role' />
+				<DateField source='created' />
+				<DateField source='lastLogin' />
+				<EmailField source='profile.email' />
+				<TextField source='profile.dealership' />
+				<TextField source='profile.role' />
 			</Datagrid>
 		</List>
 	);

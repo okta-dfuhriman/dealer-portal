@@ -1,7 +1,16 @@
 import md5 from 'blueimp-md5';
 import type { AuthProvider as RaAuthProvider, UserIdentity } from 'react-admin';
 import { OktaAuth } from '@okta/okta-auth-js';
-import type { Tokens, UserClaims, AccessToken } from '@okta/okta-auth-js';
+import type {
+	Tokens,
+	UserClaims as OktaUserClaims,
+	AccessToken as OktaAccessToken,
+} from '@okta/okta-auth-js';
+
+type UserClaims = OktaUserClaims & {
+	scopes: string[];
+	permissions?: string[];
+};
 
 const silentAuth = async (
 	sdk: OktaAuth,
@@ -113,6 +122,8 @@ export default class AuthProvider {
 			},
 			// called when the user navigates to a new location, to check for permissions / roles
 			getPermissions: () => {
+				let appPermissions: string[] = [];
+
 				return this.oktaAuth
 					.isAuthenticated()
 					.then((isAuthenticated) => {
@@ -122,11 +133,32 @@ export default class AuthProvider {
 
 						return this.oktaAuth.tokenManager
 							.getTokens()
-							.then((tokens: Tokens) =>
-								Promise.resolve(
-									tokens?.accessToken?.scopes || []
-								)
-							);
+							.then((tokens: Tokens) => {
+								const standardScopes = [
+									'openid',
+									'profile',
+									'email',
+									'phone',
+									'address',
+									'offline_access',
+								];
+
+								if (tokens?.accessToken) {
+									const { scopes = [], permissions = [] } =
+										tokens.accessToken.claims as UserClaims;
+
+									const _permissions = Array.from(
+										new Set([...scopes, ...permissions])
+									);
+
+									appPermissions = _permissions.filter(
+										(permission) =>
+											!standardScopes.includes(permission)
+									);
+								}
+								console.log(appPermissions);
+								return Promise.resolve(appPermissions);
+							});
 					});
 			},
 			getIdentity: () => {
@@ -139,7 +171,7 @@ export default class AuthProvider {
 
 						return this.oktaAuth
 							.getUser()
-							.then((userInfo: UserClaims) => {
+							.then((userInfo: OktaUserClaims) => {
 								const { sub: id, email, picture } = userInfo;
 
 								let avatar = picture;
@@ -163,7 +195,7 @@ export default class AuthProvider {
 					});
 			},
 			getAccessToken: (decode: boolean = false) => {
-				let result: string | AccessToken | undefined;
+				let result: string | OktaAccessToken | undefined;
 
 				if (decode) {
 					getTokens(this.oktaAuth).then(

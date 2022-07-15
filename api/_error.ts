@@ -32,6 +32,7 @@ interface ErrorMap {
 	[key: number]: TypeBody;
 }
 
+type ErrorResponseOptions = Error | string | number | VercelResponse | TypeBody;
 export class ErrorResponse {
 	res?: VercelResponse;
 	body?: TypeBody;
@@ -42,21 +43,28 @@ export class ErrorResponse {
 	errorMessage?: TypeBody['errorMessage'];
 	errorType?: TypeBody['errorType'];
 	errorStack?: TypeBody['errorStack'];
+	responseBody?: TypeBody;
 
-	constructor(options: any, res: VercelResponse) {
+	constructor(options: ErrorResponseOptions, res?: VercelResponse) {
 		this.res = res;
 		this.statusCode = 500;
 
-		if (options instanceof Error) {
+		if (res) {
+			this.res = res;
+		} else if (!res && options.hasOwnProperty('send')) {
+			this.res = options as VercelResponse;
+		} else if (options instanceof Error) {
 			this.error = options;
 		} else if (typeof options === 'string') {
 			this.errorSummary = options;
 		} else if (typeof options === 'number') {
 			this.statusCode = options;
 		} else {
-			this.errorCode = options?.errorCode || this.errorCode;
-			this.errorSummary = options?.errorSummary || this.errorSummary;
-			this.statusCode = options?.statusCode || this.statusCode;
+			const { errorCode, errorSummary, statusCode } = options as TypeBody;
+
+			this.errorCode = errorCode || this.errorCode;
+			this.errorSummary = errorSummary || this.errorSummary;
+			this.statusCode = statusCode || this.statusCode;
 		}
 
 		if (this.error instanceof Error) {
@@ -74,35 +82,42 @@ export class ErrorResponse {
 			errorType: this.errorType,
 			errorStack: this.errorStack,
 		};
+	}
 
-		const errorMap: ErrorMap = {
-			401: {
-				errorSummary: 'Authorization failed',
-				errorCode: 'E0000004',
-				...this.body,
-			},
-			403: {
-				...this.body,
-			},
-			500: {
-				errorCode: 'E0000009',
-				errorSummary: 'Internal Server Error',
-				...this.body,
-			},
-			501: {
-				errorCode: 'E0000060',
-				errorSummary: 'Unsupported operation.',
-				...this.body,
-			},
-		};
+	errorMap: ErrorMap = {
+		401: {
+			errorSummary: 'Authorization failed',
+			errorCode: 'E0000004',
+			...this.body,
+		},
+		403: {
+			...this.body,
+		},
+		500: {
+			errorCode: 'E0000009',
+			errorSummary: 'Internal Server Error',
+			...this.body,
+		},
+		501: {
+			errorCode: 'E0000060',
+			errorSummary: 'Unsupported operation.',
+			...this.body,
+		},
+	};
 
-		const responseBody: TypeBody =
-			errorMap[(this?.statusCode as keyof ErrorMap) || 500];
-
-		if (this.res) {
-			return this.res.status(this?.statusCode || 500).json(responseBody);
+	send(statusCode: number) {
+		if (!this?.res) {
+			throw new Error(
+				'Must initiate with `res` in order to send a response.'
+			);
 		}
 
-		return responseBody;
+		if (statusCode) {
+			this.statusCode = statusCode;
+		}
+
+		this.responseBody = this.errorMap[this.statusCode!] || {};
+
+		return this.res.status(this.statusCode!).json(this.responseBody);
 	}
 }

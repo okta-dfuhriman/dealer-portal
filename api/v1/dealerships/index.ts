@@ -1,17 +1,22 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import * as _ from 'lodash';
-import { doAuthZ, OktaClient } from '../../_common';
-import type { CreateDealerRequest } from '../../_common';
+import { OktaClient, JwtValidator } from '../../_common';
+import type { CreateDealerRequest, ValidateResult } from '../../_common';
 
 const getDealerships = async (req: VercelRequest, res: VercelResponse) => {
 	// 1) Validate the accessToken
-	const accessToken = await doAuthZ(req, res, ['dealerships:read']);
 
-	const client = new OktaClient();
+	const { isValid, accessToken } = (await new JwtValidator(
+		req,
+		{ assertions: { permissions: ['dealerships:read'] } },
+		res
+	).validateTokens()) as ValidateResult;
 
-	if (!accessToken) {
+	if (!isValid || !accessToken) {
 		return res.status(401).send('Unauthorized');
 	}
+
+	const client = new OktaClient();
 
 	const {
 		query: { q, filter, search, limit, after, sortBy, sortOrder = 'ASC' },
@@ -35,7 +40,9 @@ const getDealerships = async (req: VercelRequest, res: VercelResponse) => {
 	};
 
 	if (_sortOrder === 'desc') {
-		result.data = _.orderBy(data, ['profile.name'], ['desc']);
+		result.data = _.orderBy(data, ['profile.dealerCode'], ['desc']);
+	} else {
+		result.data = _.orderBy(data, ['profile.dealerCode'], ['asc']);
 	}
 
 	return res.json(result);
@@ -43,7 +50,15 @@ const getDealerships = async (req: VercelRequest, res: VercelResponse) => {
 
 const createDealership = async (req: VercelRequest, res: VercelResponse) => {
 	// 1) Validate the accessToken
-	const accessToken = await doAuthZ(req, res, ['dealerships:create']);
+	const { isValid, accessToken } = (await new JwtValidator(
+		req,
+		{ assertions: { permissions: ['dealerships:create'] } },
+		res
+	).validateTokens()) as ValidateResult;
+
+	if (!isValid || !accessToken) {
+		return res.status(401).send('Unauthorized');
+	}
 
 	const client = new OktaClient();
 

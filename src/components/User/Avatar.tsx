@@ -1,24 +1,27 @@
 import { useRecordContext } from 'react-admin';
 import { Avatar as MuiAvatar } from '@mui/material';
-import type { AvatarProps as MuiAvatarProps } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material';
+import type { User } from '@okta/okta-sdk-nodejs';
+import type { FieldProps } from 'react-admin';
 
-export interface AvatarProps extends MuiAvatarProps {
-	source: string;
-	label?: string;
+export interface AvatarProps extends FieldProps<User> {
+	sx?: SxProps<Theme>;
+	size?: string;
 }
 
-const Avatar = ({ sx, ...props }: AvatarProps) => {
+const Avatar = ({ sx, size = '24', ...props }: AvatarProps) => {
 	const {
 		id,
 		profile: { firstName, lastName, profilePicture },
-	} = useRecordContext({ ...props });
+	} = useRecordContext<User>({ ...props });
 
 	return (
 		<MuiAvatar
 			key={`${id}-avatar`}
 			alt={`${firstName} ${lastName}`}
 			src={profilePicture}
-			sx={{ width: 24, height: 24, ...sx }}
+			style={{ width: parseInt(size, 10), height: parseInt(size, 10) }}
+			sx={sx}
 			variant='rounded'
 			{...props}
 		/>

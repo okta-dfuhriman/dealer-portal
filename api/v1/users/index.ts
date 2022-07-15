@@ -1,17 +1,22 @@
+import { OktaClient, JwtValidator } from '../../_common';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { doAuthZ, OktaClient } from '../../_common';
-import type { CreateUserProfile, GetUsersOptions } from '../../_common';
+import type { CreateUserRequest } from '@okta/okta-sdk-nodejs';
+import type { GetUsersOptions, ValidateResult } from '../../_common';
 
 const getUsers = async (req: VercelRequest, res: VercelResponse) => {
 	try {
 		// 1) Validate the accessToken
-		const accessToken = await doAuthZ(req, res, ['users:read']);
+		const { isValid, accessToken } = (await new JwtValidator(
+			req,
+			{ assertions: { permissions: ['users:read'] } },
+			res
+		).validateTokens()) as ValidateResult;
 
-		const client = new OktaClient();
-
-		if (!accessToken) {
+		if (!isValid || !accessToken) {
 			return res.status(401).send('Unauthorized');
 		}
+
+		const client = new OktaClient();
 
 		const {
 			query: { q, filter, search, limit, after, sortBy, sortOrder },
@@ -53,7 +58,18 @@ const getUsers = async (req: VercelRequest, res: VercelResponse) => {
 };
 
 const createUser = async (req: VercelRequest, res: VercelResponse) => {
-	const body: CreateUserProfile = req?.body;
+	const body: CreateUserRequest = req?.body;
+
+	// 1) Validate the accessToken
+	const { isValid, accessToken } = (await new JwtValidator(
+		req,
+		{ assertions: { permissions: ['users:create'] } },
+		res
+	).validateTokens()) as ValidateResult;
+
+	if (!isValid || !accessToken) {
+		return res.status(401).send('Unauthorized');
+	}
 
 	const client = new OktaClient();
 

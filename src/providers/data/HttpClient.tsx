@@ -87,7 +87,9 @@ export default class HttpClient {
 		const baseUrl = url || window.location.origin + '/api/v1/';
 
 		if (params) {
-			if ('id' in params) {
+			if ('target' in params) {
+				path = params.target + 's/' + params.id + '/' + resource;
+			} else if ('id' in params) {
 				path = resource + '/' + params.id;
 			} else if (!('data' in params)) {
 				path =
@@ -106,15 +108,12 @@ export default class HttpClient {
 		return (await this.fetch(url)) as GetResults;
 	}
 
-	async post(
-		resource: string,
-		{ data = {} }: PostParams
-	): Promise<PostResults> {
-		const url = this.generateURL({ resource });
+	async post(resource: string, params: PostParams): Promise<PostResults> {
+		const url = this.generateURL({ resource, params });
 
 		return (await this.fetch(url, {
 			method: 'post',
-			body: JSON.stringify(data),
+			body: JSON.stringify(params.data),
 		})) as PostResults;
 	}
 

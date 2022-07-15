@@ -16,11 +16,7 @@ const DealerField = (props: Omit<WrapperFieldProps, 'children'>) => {
 				}}
 			>
 				<DealerLogo source='profile.logo' label='' sx={{ mr: 1.5 }} />
-				<TextField
-					source='profile.name'
-					label='MTS Code'
-					sx={{ pr: 0.5 }}
-				/>
+				<TextField source='profile.dealerCode' sx={{ pr: 0.5 }} />
 				{record?.profile?.description && (
 					<>
 						-

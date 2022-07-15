@@ -1,18 +1,14 @@
 export type {
 	Dealership,
-	UserProfile,
+	Role,
 	CreateDealerRequest,
-	CreateUserProfile,
-	DealerProfile,
-	User,
-	OktaConfig,
-	TypeOktaClient,
+	CreateRoleRequest,
 	GetUsersOptions,
 	FetchParams,
 } from './_oktaClient';
 export { default as OktaClient } from './_oktaClient';
-export { default as validateJwt } from './_validateJwt';
-export { default as doAuthZ } from './_doAuthZ';
+export { default as JwtValidator } from './_validateJwt';
 export * from './_error';
 export { default as JwtVerifier } from './_customJwtVerifier';
-export type { ValidateJwtOptions } from './_validateJwt';
+
+export type { ValidateJwtOptions, ValidateResult } from './_validateJwt';

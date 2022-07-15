@@ -51,7 +51,7 @@ const customEnglishMessages: TranslationMessages = {
 	},
 	pos: {
 		search: 'Search',
-		configuration: 'Settings',
+		configuration: 'My Profile',
 		language: 'Language',
 		theme: {
 			name: 'Theme',
@@ -67,12 +67,38 @@ const customEnglishMessages: TranslationMessages = {
 		dealerships: {
 			name: 'Dealership |||| Dealerships',
 			fields: {
-				name: 'MTS Code',
-				description: 'Name',
-				domain: 'Website Domain',
+				'profile.name': 'Okta Group Name',
+				'profile.description': 'Dealership Name',
+				'profile.domain': 'Website Domain',
+				'profile.dealerCode': 'MTS Code',
+				'profile.isDeleted': 'Deleted',
+				'profile.oktaId': 'Id',
+				users: 'Users',
 			},
 			page: {
 				edit: 'Edit Dealer',
+			},
+			tabs: {
+				details: 'Details',
+				users: 'Users',
+			},
+		},
+		roles: {
+			name: 'Role |||| Roles',
+			fields: {
+				'profile.name': 'Okta Group Name',
+				'profile.description': 'Role Name',
+				'profile.roleName': 'Role',
+				'profile.isDeleted': 'Deleted',
+				'profile.oktaId': 'Id',
+				users: 'Users',
+			},
+			page: {
+				edit: 'Edit Role',
+			},
+			tabs: {
+				details: 'Details',
+				users: 'Users',
 			},
 		},
 		users: {
@@ -80,12 +106,18 @@ const customEnglishMessages: TranslationMessages = {
 			fields: {
 				'profile.firstName': 'First Name',
 				'profile.lastName': 'Last Name',
-				'profile.Dealer': 'Dealership',
+				'profile.dealership': 'Dealership',
 				'profile.email': 'Email',
 				'profile.role': 'Role',
+				created: 'Enrolled',
+				lastLogin: 'Last Login',
 			},
 			page: {
 				edit: 'Edit Profile',
+			},
+			tabs: {
+				me: 'Profile',
+				settings: 'Settings',
 			},
 		},
 	},

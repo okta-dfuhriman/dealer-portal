@@ -1,13 +1,14 @@
-import { Admin, Resource } from 'react-admin';
+import { Admin, CustomRoutes, Resource } from 'react-admin';
+import { Route } from 'react-router-dom';
 // import { QueryClient, QueryClientConfig } from 'react-query';
 import { OktaAuth } from '@okta/okta-auth-js';
 import polyglotI18nProvider from 'ra-i18n-polyglot';
 
-import Theme from 'styles/theme';
+import { lightTheme } from 'styles/theme';
 import Languages from 'i18n';
 import { Layout } from 'components';
 import Resources from 'resources';
-import { LoginPage } from 'pages';
+import { LoginPage, Me } from 'pages';
 import { AuthProvider, DataProvider } from 'providers';
 import { authConfig } from 'config';
 
@@ -37,25 +38,10 @@ const i18nProvider = polyglotI18nProvider((locale) => {
 	return Languages.en;
 }, 'en');
 
-// const resources = [
-// 	<Resource
-// 		name='users'
-// 		list={UserList}
-// 		create={UserCreate}
-// 		icon={PeopleIcon}
-// 		options={{ label: 'Users' }}
-// 	/>,
-// 	<Resource
-// 		name='dealerships'
-// 		create={DealershipCreate}
-// 		list={DealershipList}
-// 		icon={DealerIcon}
-// 		options={{ label: 'Dealers' }}
-// 	/>,
-// ];
-
 const renderResources = (permissions: string[] = []) => {
 	return Resources.map((props) => {
+		console.log('renderResources()');
+		console.log(permissions);
 		if (permissions.includes(`${props.name}:read`)) {
 			return <Resource {...props} />;
 		}
@@ -77,14 +63,14 @@ const App = () => {
 			layout={Layout}
 			i18nProvider={i18nProvider}
 			disableTelemetry
-			theme={Theme.lightTheme}
+			theme={lightTheme}
 			ready={LoginPage}
 			// queryClient={queryClient}
 		>
 			{renderResources}
-			{/* <CustomRoutes> */}
-			{/* <Route path='/' element={<Test />} /> */}
-			{/* </CustomRoutes> */}
+			<CustomRoutes>
+				<Route key={'me'} path='/me' element={<Me />} />
+			</CustomRoutes>
 		</Admin>
 	);
 };

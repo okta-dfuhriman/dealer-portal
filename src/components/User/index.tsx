@@ -9,3 +9,6 @@ export default {
 	Edit,
 	Show,
 };
+
+export { default as UserReferenceField } from './UsersReferenceField';
+export { default as UserLinkField } from './UserLinkField';

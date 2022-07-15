@@ -4,8 +4,8 @@ import DealershipProfile from '../DealershipProfile';
 
 const DealershipCreate = () => {
 	return (
-		<Create redirect='list' sx={{ maxWidth: 600 }}>
-			<DealershipProfile />
+		<Create redirect='list' sx={{ maxWidth: 600 }} title='Add Dealership'>
+			<DealershipProfile isCreate />
 		</Create>
 	);
 };

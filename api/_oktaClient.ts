@@ -1,12 +1,13 @@
-import * as _ from 'lodash';
+import _ from 'lodash';
 import { Client, CreateUserRequest, GroupRule } from '@okta/okta-sdk-nodejs';
 import type {
-	User as OktaUser,
-	UserProfile as OktaUserProfile,
-	GroupProfile as OktaGroupProfile,
+	User,
+	UserProfile,
+	GroupProfile,
 	GroupRuleOptions,
-	GroupOptions,
 	Group as OktaGroup,
+	ClientConfig,
+	UserOptions,
 } from '@okta/okta-sdk-nodejs';
 import type { RequestOptions } from '@okta/okta-sdk-nodejs/src/types/request-options';
 import { ApiError } from './_common';
@@ -29,53 +30,20 @@ export interface Dealership
 	extends Omit<Partial<OktaGroup>, '_embedded' | '_links' | 'profile'> {
 	_embedded?: { [name: string]: unknown };
 	_links?: { [name: string]: unknown };
-	profile: DealerProfile | OktaGroupProfile;
+	profile: GroupProfile;
 }
-export interface UserProfile extends Partial<OktaUserProfile> {
-	profilePicture?: string;
-}
-
-export interface CreateUserProfile extends UserProfile {
-	email: string;
-}
+export interface Role extends Dealership {}
 
 export interface CreateDealerRequest {
-	name: string;
+	name?: string;
 	description?: string;
 	domain?: string;
+	dealerCode: string;
 }
 
-export type DealerProfile = OktaGroupProfile & {
-	rawName?: string;
-	domain?: string;
-	name?: string;
-	logo?: string;
-	[key: string]: string | undefined;
-};
-
-export interface User
-	extends Omit<OktaUser, '_embedded' | '_links' | 'profile'> {
-	_embedded?: any;
-	_links?: any;
-	profile: UserProfile;
-}
-
-export interface OktaConfig {
-	orgUrl: string;
-	token?: string;
-	clientId: string;
-	scopes: string[];
-	authorizationMode?: string;
-	privateKey: string | Record<string, unknown>;
-	keyId?: string;
-	cacheStore?: CacheStorage;
-	defaultCacheMiddlewareResponseBufferSize?: number;
-	userAgent?: string;
-	httpsProxy?: string | unknown; // https://github.com/TooTallNate/node-agent-base/issues/56
-}
-
-export interface TypeOktaClient extends Omit<Client, 'getUser'> {
-	getUser: (id: string) => Promise<User>;
+export interface CreateRoleRequest
+	extends Omit<CreateDealerRequest, 'domain' | 'dealerCode'> {
+	roleName: string;
 }
 
 export interface GetUsersOptions {
@@ -95,7 +63,7 @@ export interface FetchParams {
 }
 
 export default class OktaClient extends Client {
-	constructor(config?: OktaConfig) {
+	constructor(config?: ClientConfig) {
 		const _defaultConfig = {
 			orgUrl: ORG_URL,
 			authorizationMode: 'PrivateKey',
@@ -121,7 +89,6 @@ export default class OktaClient extends Client {
 	async getOktaUser(id: string) {
 		try {
 			const user = (await this.getUser(id)) as any;
-			console.log(user);
 
 			return await this.parseUser(user);
 		} catch (error: any) {
@@ -132,7 +99,7 @@ export default class OktaClient extends Client {
 	async getUsers(options: GetUsersOptions) {
 		const users: User[] = [];
 
-		let user: OktaUser | null;
+		let user: User | null;
 
 		for await (user of this.listUsers(
 			JSON.parse(JSON.stringify(options))
@@ -162,9 +129,46 @@ export default class OktaClient extends Client {
 		return await this.parseUser(user);
 	}
 
+	async updateOktaUser({ id, ...data }: User) {
+		let oktaUser = await this.getUser(id!);
+
+		if (!oktaUser) {
+			throw new ApiError({
+				statusCode: 500,
+				message: 'Unable to update user!',
+			});
+		}
+
+		const profile = {
+			...oktaUser.profile,
+			...(data.profile as UserProfile),
+		};
+
+		oktaUser.profile = profile;
+
+		oktaUser = await oktaUser.update();
+
+		return await this.parseUser(oktaUser);
+	}
+
+	async getDealershipUsers(id: string) {
+		const users: User[] = [];
+
+		let user: User | null;
+
+		for await (user of this.listGroupUsers(id)) {
+			if (user) {
+				users.push(await this.parseUser(user));
+			}
+		}
+
+		return users;
+	}
+
 	async getDealerships() {
+		const searchQuery = 'q=dealership';
 		const response = await this.fetch({
-			url: 'api/v1/groups?search=profile.name sw "Dealer"',
+			url: 'api/v1/groups?' + searchQuery,
 		});
 
 		if (!response.ok) {
@@ -175,21 +179,23 @@ export default class OktaClient extends Client {
 			});
 		}
 
-		const body = (await response.json()) as Dealership[];
+		const body = (await response.json()) as OktaGroup[];
 
 		const dealerships: Dealership[] = [];
 
 		for (let i = 0; i < body.length; i++) {
-			dealerships.push(await this.parseDealership(body[i]));
+			const dealership = await this.parseDealership(body[i]);
+
+			if (dealership) {
+				dealerships.push(dealership);
+			}
 		}
 
 		return dealerships;
 	}
 
 	async getDealership(id: string) {
-		return await this.parseDealership(
-			(await this.getGroup(id)) as unknown as Dealership
-		);
+		return await this.parseDealership(await this.getGroup(id));
 	}
 
 	async getDealerLogo(domain?: string) {
@@ -217,31 +223,29 @@ export default class OktaClient extends Client {
 		return logo;
 	}
 
-	async createDealership(createDealerRequest: CreateDealerRequest) {
+	async createDealership(data: CreateDealerRequest) {
+		data.name = `dealership|${data.dealerCode}`;
+
 		// 1) Create the group and parse the response.
 		const oktaGroup = await this.createGroup({
-			profile: { ...createDealerRequest },
+			profile: { ...data },
 		});
-		const group = await this.parseDealership(oktaGroup as Dealership);
 
-		const {
-			id,
-			profile: { name },
-		} = group;
+		const group = await this.parseDealership(oktaGroup);
 
 		// 2) Generate the options
 		const ruleOptions = {
-			name: `Dealer_${name}`,
+			name: group?.profile.name,
 			type: 'group_rule',
 			conditions: {
 				expression: {
 					type: 'urn:okta:expression:1.0',
-					value: `user.Dealer==\"${name}\"`,
+					value: `user.dealership==\"${oktaGroup.profile?.dealerCode}\"`,
 				},
 			},
 			actions: {
 				assignUserToGroups: {
-					groupIds: [id],
+					groupIds: [oktaGroup.id],
 				},
 			},
 		} as GroupRuleOptions;
@@ -257,23 +261,58 @@ export default class OktaClient extends Client {
 		return group;
 	}
 
-	async parseDealership(dealer: Dealership) {
+	async updateDealership({ id, ...data }: OktaGroup) {
+		let oktaGroup = await this.getGroup(id);
+
+		oktaGroup.profile = {
+			...oktaGroup.profile,
+			...data.profile,
+		};
+
+		oktaGroup = await oktaGroup.update();
+
+		return await this.parseDealership(oktaGroup);
+	}
+
+	async parseDealership(oktaGroup: OktaGroup) {
+		const oktaId = oktaGroup.id;
+
+		let updatedProfile: Partial<GroupProfile> = {};
+
+		if (!oktaGroup?.profile?.oktaId) {
+			updatedProfile['oktaId'] = oktaId;
+		}
+
+		if (oktaGroup?.profile?.isDeleted) {
+			return;
+		}
+
+		// If group name has not been properly set. Do it now.
+		// This typically happens during a create flow, but could happen other ways.
+		if (oktaGroup?.profile?.name.split('_')[0] !== 'dealership') {
+			updatedProfile.name = `dealership|${oktaGroup?.profile?.dealerCode}`;
+		}
+
+		if (Object.keys(updatedProfile).length > 0) {
+			oktaGroup.profile = {
+				...oktaGroup.profile,
+				...updatedProfile,
+			};
+
+			oktaGroup = await oktaGroup.update();
+		}
+
+		const dealer = oktaGroup as Dealership;
+
 		delete dealer?._embedded;
 		delete dealer?._links;
 
-		const regex = /.*(?<=_)/;
-
-		const profile = dealer.profile as DealerProfile;
-		const domain = profile?.domain;
-
-		const logo = await this.getDealerLogo(domain);
+		const logo = await this.getDealerLogo(dealer.profile?.domain);
 
 		return {
 			...dealer,
 			profile: {
-				...profile,
-				rawName: dealer.profile.name,
-				name: dealer.profile.name.replace(regex, ''),
+				...dealer.profile,
 				logo,
 			},
 		} as Dealership;
@@ -281,7 +320,7 @@ export default class OktaClient extends Client {
 
 	async deactivateDealership(id: string, shouldDelete: boolean = false) {
 		try {
-			// 1) Fetch group
+			// 1) Fetch the group
 			let group = await this.getGroup(id);
 
 			const {
@@ -300,13 +339,13 @@ export default class OktaClient extends Client {
 			if (shouldDelete) {
 				await group.delete();
 				await groupRule.delete();
-				await this.deleteGroup(id);
 			} else {
 				// Otherwise, update names to 'DELETED'
-				groupRule.name = `DELETED_${groupRule.name}`;
+				groupRule.name = `DELETED|${groupRule.name}`;
 				groupRule = await groupRule.update();
 
-				group.profile.name = `DELETED_${name}`;
+				group.profile.name = `DELETED|${name}`;
+				group.profile.isDeleted = true;
 				group = await group.update();
 			}
 
@@ -342,33 +381,167 @@ export default class OktaClient extends Client {
 		return `https://www.gravatar.com/avatar/${hashedEmail}?d=identicon`;
 	}
 
-	async parseUser(user: OktaUser) {
-		const _user = user as User;
+	async parseUser(user: User) {
+		const _user = user as any;
 
 		delete _user?._embedded;
 		delete _user?._links;
 
-		let profile = {};
+		const profile = _user?.profile as Partial<UserProfile>;
 
-		let key: keyof UserProfile;
+		Object.keys(profile).forEach((key) => {
+			let _key = key as keyof UserProfile;
 
-		for (key in _user.profile) {
-			if (!_.isEmpty(_user.profile[key])) {
-				profile[key] = _user.profile[key];
+			if (typeof profile[_key] === undefined) {
+				delete profile[_key];
 			}
-		}
+		});
 
 		const { displayName, firstName, lastName, profilePicture, email } =
-			profile as UserProfile;
+			profile;
 
-		if (!profilePicture) {
-			profile['profilePicture'] = await this.getAvatar(email!);
+		if (!profile?.profilePicture) {
+			profile.profilePicture = await this.getAvatar(email!);
 		}
 
 		if (!displayName && firstName && lastName) {
-			profile['displayName'] = `${firstName} ${lastName}`;
+			profile.displayName = `${firstName} ${lastName}`;
 		}
 
 		return { ..._user, profile } as User;
+	}
+
+	async getDealershipRole(id: string) {
+		return await this.parseDealershipRole(await this.getGroup(id));
+	}
+
+	async getDealershipRoles() {
+		const searchQuery = 'q=role';
+		const response = await this.fetch({
+			url: 'api/v1/groups?' + searchQuery,
+		});
+
+		if (!response.ok) {
+			const { status, json } = response.clone();
+			throw new ApiError({
+				statusCode: status,
+				message: (await json()) || '',
+			});
+		}
+
+		const body = (await response.json()) as OktaGroup[];
+
+		const roles: Role[] = [];
+
+		for (let i = 0; i < body.length; i++) {
+			const role = await this.parseDealershipRole(body[i]);
+
+			if (role) {
+				roles.push(role);
+			}
+		}
+
+		return roles;
+	}
+
+	async createDealershipRole(data: CreateRoleRequest) {
+		data.name = `role|${data.roleName}`;
+
+		// 1) Create the group and parse the response.
+		const oktaGroup = await this.createGroup({
+			profile: { ...data },
+		});
+
+		const group = await this.parseDealershipRole(oktaGroup);
+
+		// 2) Generate the options
+		const ruleOptions = {
+			name: group?.profile.name,
+			type: 'group_rule',
+			conditions: {
+				expression: {
+					type: 'urn:okta:expression:1.0',
+					value: `user.dealership==\"${oktaGroup.profile?.roleName}\"`,
+				},
+			},
+			actions: {
+				assignUserToGroups: {
+					groupIds: [oktaGroup.id],
+				},
+			},
+		} as GroupRuleOptions;
+
+		// 3) Create the group rule
+		const rule = await this.createGroupRule(ruleOptions);
+
+		// 4) Activate the group rule
+		if (rule?.id) {
+			await this.activateGroupRule(rule.id);
+		}
+
+		return group;
+	}
+
+	async updateDealershipRole({ id, ...data }: OktaGroup) {
+		let oktaGroup = await this.getGroup(id);
+
+		oktaGroup.profile = {
+			...oktaGroup.profile,
+			...data.profile,
+		};
+
+		oktaGroup = await oktaGroup.update();
+
+		return await this.parseDealershipRole(oktaGroup);
+	}
+
+	async getDealershipRoleUsers(id: string) {
+		const users: User[] = [];
+
+		let user: User | null;
+
+		for await (user of this.listGroupUsers(id)) {
+			if (user) {
+				users.push(await this.parseUser(user));
+			}
+		}
+
+		return users;
+	}
+
+	async parseDealershipRole(oktaGroup: OktaGroup) {
+		const oktaId = oktaGroup.id;
+
+		let updatedProfile: Partial<GroupProfile> = {};
+
+		if (!oktaGroup?.profile?.oktaId) {
+			updatedProfile['oktaId'] = oktaId;
+		}
+
+		if (oktaGroup?.profile?.isDeleted) {
+			return;
+		}
+
+		// If group name has not been properly set. Do it now.
+		// This typically happens during a create flow, but could happen other ways.
+		if (oktaGroup?.profile?.name.split('_')[0] !== 'role') {
+			updatedProfile.name = `role|${oktaGroup?.profile?.roleName}`;
+		}
+
+		if (Object.keys(updatedProfile).length > 0) {
+			oktaGroup.profile = {
+				...oktaGroup.profile,
+				...updatedProfile,
+			};
+
+			oktaGroup = await oktaGroup.update();
+		}
+
+		const role = oktaGroup as Role;
+
+		delete role?._embedded;
+		delete role?._links;
+
+		return role;
 	}
 }

@@ -1,6 +1,6 @@
 import jwksRSA, { JwksClient } from 'jwks-rsa';
 import nJwt, { Verifier } from 'njwt';
-import type { JwtClaims as Claims } from '@okta/jwt-verifier';
+import OktaJwtVerifier from '@okta/jwt-verifier';
 
 const {
 	VITE_APP_OKTA_TESTING_DISABLEHTTPSCHECK: DISABLEHTTPSCHECK = false,
@@ -15,6 +15,13 @@ const ISSUER = `${ORG_URL}/oauth2/${AUTH_SERVER_ID}`;
 
 const findDomainURL = 'https://bit.ly/finding-okta-domain';
 const findAppCredentialsURL = 'https://bit.ly/finding-okta-app-credentials';
+
+interface CustomOktaJwt
+	extends Omit<nJwt.Jwt, 'header' | 'body'>,
+		Omit<OktaJwtVerifier.Jwt, 'claims'> {
+	claims?: OktaJwtVerifier.JwtClaims | nJwt.JwtBody;
+	body?: OktaJwtVerifier.JwtClaims | nJwt.JwtBody;
+}
 
 class ConfigurationValidationError extends Error {}
 
@@ -127,7 +134,10 @@ const assertClientId = (clientId: string | undefined) => {
 	}
 };
 
-const verifyAssertedClaims = (verifier: JwtVerifier, claims: Claims) => {
+const verifyAssertedClaims = (
+	verifier: JwtVerifier,
+	claims: OktaJwtVerifier.JwtClaims
+) => {
 	const assertedClaimsVerifier = new AssertedClaimsVerifier();
 	for (const [claimName, expectedValue] of Object.entries(
 		verifier.claimsToAssert
@@ -205,16 +215,21 @@ export default class JwtVerifier {
 	}
 
 	async verifyAsPromise(tokenString: string, verifier = this.verifier) {
-		return new Promise<Claims>((resolve, reject) => {
+		return new Promise<OktaJwtVerifier.Jwt>((resolve, reject) => {
 			verifier.verify(tokenString, (err, jwt) => {
 				if (err) {
 					return reject(err);
 				}
-				let claims: Claims = {
-					...(jwt.body as unknown as Claims),
-				};
 
-				resolve(claims);
+				const _jwt = jwt as CustomOktaJwt;
+
+				_jwt.claims = jwt.body as unknown as OktaJwtVerifier.JwtClaims;
+
+				_jwt['claims'] = jwt.body;
+
+				delete _jwt.body;
+
+				resolve(_jwt as OktaJwtVerifier.Jwt);
 			});
 		});
 	}
@@ -228,10 +243,10 @@ export default class JwtVerifier {
 		// Remaining to verify:
 		// - any custom claims
 
-		const claims = await this.verifyAsPromise(idTokenString);
+		const jwt = await this.verifyAsPromise(idTokenString);
 
-		verifyAssertedClaims(this, claims);
+		verifyAssertedClaims(this, jwt.claims);
 
-		return claims;
+		return jwt;
 	}
 }

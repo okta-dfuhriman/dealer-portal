@@ -1,9 +1,9 @@
 import { SimpleShowLayout, TextField, Show, UrlField } from 'react-admin';
-
+import DealershipTitle from '../DealershipTitle';
 const DealershipShow = () => (
-	<Show sx={{ maxWidth: 600 }}>
+	<Show sx={{ maxWidth: 600 }} title={<DealershipTitle />}>
 		<SimpleShowLayout sx={{ p: 4 }} spacing={3}>
-			<TextField source='profile.name' variant='body1' />
+			<TextField source='profile.dealerCode' variant='body1' />
 
 			<TextField
 				source='profile.description'

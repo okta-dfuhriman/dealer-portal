@@ -28,7 +28,7 @@ const ConfigurationMenu = React.forwardRef((props, ref) => {
 			// @ts-ignore
 			ref={ref}
 			{...props}
-			to='/configuration'
+			to='/me'
 		>
 			<ListItemIcon>
 				<SettingsIcon />

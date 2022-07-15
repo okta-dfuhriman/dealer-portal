@@ -73,8 +73,9 @@ export default class DataProvider {
 				return this.httpClient.get(resource, params);
 			},
 			getManyReference: (resource, params) =>
-				Promise.resolve({ data: [] }),
-			update: (resource, params) => Promise.resolve({ data: {} }),
+				this.httpClient.get(resource, params),
+			update: (resource, params) =>
+				this.httpClient.post(resource, params),
 			updateMany: (resource, params) => Promise.resolve({ data: [] }),
 			create: (resource, { data = {}, ...params }) =>
 				this.httpClient.post(resource, { data }),

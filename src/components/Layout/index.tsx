@@ -5,3 +5,5 @@ import Menu from './Menu';
 export default (props: LayoutProps) => {
 	return <Layout {...props} appBar={AppBar} menu={Menu} />;
 };
+
+export * from './themes';
