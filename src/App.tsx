@@ -82,9 +82,9 @@ const App = () => {
 			queryClient={queryClient}
 		>
 			{renderResources}
-			<CustomRoutes>
+			{/* <CustomRoutes>
 				<Route key={'me'} path='/me' element={<Me />} />
-			</CustomRoutes>
+			</CustomRoutes> */}
 		</Admin>
 	);
 };
