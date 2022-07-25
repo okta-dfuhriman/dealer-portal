@@ -1,8 +1,4 @@
-import type {
-	AuthProvider,
-	DataProvider as RaDataProvider,
-	DeleteParams,
-} from 'react-admin';
+import type { AuthProvider, DataProvider as RaDataProvider } from 'react-admin';
 
 import HttpClient from './HttpClient';
 import type { SearchParams } from './HttpClient';
