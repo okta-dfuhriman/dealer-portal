@@ -7,7 +7,6 @@ import type {
 	GroupRuleOptions,
 	Group as OktaGroup,
 	ClientConfig,
-	UserOptions,
 } from '@okta/okta-sdk-nodejs';
 import type { RequestOptions } from '@okta/okta-sdk-nodejs/src/types/request-options';
 import { ApiError } from './_common';
