@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { ValidationError } from 'react-admin';
 import type { ValidateResult } from '../../../_common';
 import { OktaClient, JwtValidator } from '../../../_common';
 

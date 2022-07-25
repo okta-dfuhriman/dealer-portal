@@ -1,7 +1,6 @@
 import { OktaClient, JwtValidator } from '../../_common';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type { CreateUserRequest, User } from '@okta/okta-sdk-nodejs';
-import type { JwtClaims } from '@okta/jwt-verifier';
 import type { GetUsersOptions, ValidateResult } from '../../_common';
 
 const getUsers = async (req: VercelRequest, res: VercelResponse) => {
