@@ -11,7 +11,6 @@ import {
 	TextInput,
 } from 'react-admin';
 import type { TabbedFormProps } from 'react-admin';
-import type { Dealership } from 'components/Dealership/DealershipProfile';
 
 import RoleUsersFormTab from './RoleUsersFormTab';
 import { CreateEditActions, UserLinkField } from 'components';

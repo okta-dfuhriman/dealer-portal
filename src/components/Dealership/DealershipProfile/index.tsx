@@ -16,13 +16,6 @@ import type { Group as OktaGroup, GroupProfile } from '@okta/okta-sdk-nodejs';
 import DealershipUsersFormTab from './DealershipUsersFormTab';
 import { CreateEditActions, UserLinkField } from 'components';
 
-export interface Dealership
-	extends Omit<Partial<OktaGroup>, '_embedded' | '_links' | 'profile'> {
-	_embedded?: { [name: string]: unknown };
-	_links?: { [name: string]: unknown };
-	profile: GroupProfile;
-}
-
 export interface DealershipProfileProps
 	extends Omit<TabbedFormProps, 'children'> {
 	isCreate?: boolean;
