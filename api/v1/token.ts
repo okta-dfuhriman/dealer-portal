@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type { JwtClaims as Claims } from '@okta/jwt-verifier';
+import type { UserProfile } from '@okta/okta-sdk-nodejs';
 import { OktaClient } from '../_common';
-import type { UserProfile } from '../_common';
 import * as _ from 'lodash';
 
 // const _roles = {
@@ -22,7 +22,7 @@ import * as _ from 'lodash';
 
 const { HOOK_API_KEY, PERMISSIONS_MAP } = process.env;
 
-const permissionsMap: PermissionsMap | {} =
+const permissionsMap: PermissionsMap =
 	typeof PERMISSIONS_MAP === 'string'
 		? JSON.parse(PERMISSIONS_MAP)
 		: PERMISSIONS_MAP || {};
@@ -32,6 +32,7 @@ interface PermissionsMap {
 	dealerAdmin: string[];
 	partsUser: string[];
 	salesUser: string[];
+	user: string[];
 }
 
 interface TypeTokenRequest {
@@ -117,7 +118,9 @@ module.exports = async (req: VercelRequest, res: VercelResponse) => {
 		}
 
 		// Reduce scopes
-		const _scp: string[] = [...permissionsMap['user']];
+		const _scp: string[] = [
+			...permissionsMap['user' as keyof PermissionsMap],
+		];
 
 		if (scopes) {
 			for (const [key, value] of Object.entries(scopes)) {
@@ -137,13 +140,19 @@ module.exports = async (req: VercelRequest, res: VercelResponse) => {
 				const roles = user?.profile?.roles as UserProfile['roles'];
 
 				roles?.forEach((role) => {
-					if (role === 'org_admin') {
+					if (role === ('org_admin' as keyof PermissionsMap)) {
 						_scp.push(
-							...(permissionsMap['dealer_admin'] as string[])
+							...(permissionsMap[
+								'dealer_admin' as keyof PermissionsMap
+							] as string[])
 						);
 					}
 
-					_scp.push(...(permissionsMap[role] as string[]));
+					_scp.push(
+						...(permissionsMap[
+							role as keyof PermissionsMap
+						] as string[])
+					);
 				});
 
 				// De-dupe scopes
