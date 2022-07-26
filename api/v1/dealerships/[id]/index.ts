@@ -82,7 +82,7 @@ const updateDealership = async (req: VercelRequest, res: VercelResponse) => {
 		}
 
 		return res.json({ data: dealership });
-	} catch (error) {
+	} catch (error: any) {
 		throw new Error(`updateDealership(): ${error}`);
 	}
 };

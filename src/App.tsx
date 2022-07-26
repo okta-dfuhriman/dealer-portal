@@ -39,47 +39,45 @@ const i18nProvider = polyglotI18nProvider((locale) => {
 	return Languages.en;
 }, 'en');
 
-const renderResources = (permissions: string[] = []) => {
-	return Resources.map((props) => {
-		console.log('renderResources()');
-		console.log(permissions);
-		let isAllowed = false;
-
-		switch (props.name) {
-			case 'users':
-				isAllowed =
-					permissions.includes(`users:read`) ||
-					permissions.includes(`users:read:dealership`);
-				break;
-			case 'dealerships':
-			case 'roles':
-				isAllowed = permissions.includes(`${props.name}:read`);
-				break;
-		}
-		if (isAllowed) {
-			return <Resource {...props} />;
-		}
-		return <></>;
-	});
-};
-
 const authProvider = new AuthProvider(oktaAuth).init();
 const dataProvider = new DataProvider(authProvider).init();
 
 const App = () => {
+	const renderResources = (permissions: string[] = []) => {
+		return Resources.map((props) => {
+			let isAllowed = false;
+
+			switch (props.name) {
+				case 'users':
+					isAllowed =
+						permissions.includes(`users:read`) ||
+						permissions.includes(`users:read:dealership`);
+					break;
+				case 'dealerships':
+				case 'roles':
+					isAllowed = permissions.includes(`${props.name}:read`);
+					break;
+			}
+			if (isAllowed) {
+				return <Resource {...props} />;
+			}
+			return <></>;
+		});
+	};
+
 	return (
 		<Admin
 			title='Dealer Portal'
 			requireAuth
 			authProvider={authProvider}
 			dataProvider={dataProvider}
+			queryClient={queryClient}
 			loginPage={LoginPage}
 			layout={Layout}
 			i18nProvider={i18nProvider}
 			disableTelemetry
 			theme={lightTheme}
 			ready={LoginPage}
-			queryClient={queryClient}
 		>
 			{renderResources}
 			{/* <CustomRoutes>
