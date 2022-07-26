@@ -50,6 +50,47 @@ const silentAuth = async (
 
 const getTokens = async (sdk: OktaAuth) => await sdk.tokenManager.getTokens();
 
+const handleLogout = async (sdk: OktaAuth) => {
+	const isAuthenticated = await sdk.isAuthenticated();
+
+	if (!isAuthenticated) {
+		return false;
+	}
+
+	console.info('executing logout...');
+
+	// 1) Clear Idp sessions and revoke all tokens
+	const tokens = (await sdk.tokenManager.getTokens()) || {};
+
+	let userId: string;
+
+	if (tokens?.accessToken) {
+		const {
+			claims: { uid },
+		}: OktaAccessToken = tokens.accessToken;
+
+		userId = uid as string;
+
+		if (userId) {
+			const url = `${window.location.origin}/api/v1/users/${userId}/sessions`;
+
+			const response = await fetch(url, { method: 'DELETE' });
+
+			if (!response.ok) {
+				const json = await response.json();
+
+				console.error(json);
+				throw false;
+			}
+		}
+	}
+
+	// 3) Do Okta Sign Out, which results in a redirect.
+	await sdk.signOut();
+
+	return await sdk.isAuthenticated();
+};
+
 export default class AuthProvider {
 	oktaAuth: OktaAuth;
 	constructor(oktaAuth: OktaAuth) {
@@ -70,25 +111,35 @@ export default class AuthProvider {
 				return this.oktaAuth.signInWithRedirect();
 			},
 			// called when the user clicks on the logout button
-			// logout: () => {
-			// 	console.log('logout');
-			// 	return Promise.resolve();
-			// },
 			logout: () => {
-				return this.oktaAuth
-					.isAuthenticated()
+				return handleLogout(this.oktaAuth)
 					.then((isAuthenticated) => {
-						if (isAuthenticated) {
-							return this.oktaAuth.signOut();
+						if (!isAuthenticated) {
+							return Promise.resolve();
 						}
-						return Promise.resolve();
+
+						return Promise.reject();
+					})
+					.catch((error: any) => {
+						console.error(error);
+						return Promise.reject();
 					});
 			},
 			// called when the API returns an error
-			checkError: ({ status }: { message: string; status: number }) => {
-				// if (status === 401 || status === 403) {
-				// 	return Promise.reject();
-				// }
+			checkError: ({
+				status,
+				message,
+			}: {
+				message: string;
+				status: number;
+			}) => {
+				if (message) {
+					console.error(message);
+				}
+
+				if (status === 401 || status === 403) {
+					return Promise.reject();
+				}
 				return Promise.resolve();
 			},
 			// checkError: ({ status }: { message: string; status: number }) => {
@@ -162,7 +213,7 @@ export default class AuthProvider {
 											!standardScopes.includes(permission)
 									);
 								}
-								console.log(appPermissions);
+								// console.log(appPermissions);
 								return Promise.resolve(appPermissions);
 							});
 					});
