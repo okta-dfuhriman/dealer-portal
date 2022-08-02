@@ -7,7 +7,7 @@ module.exports = async (req: VercelRequest, res: VercelResponse) => {
 			query: { id: userId },
 		} = req || {};
 
-		const client = new OktaClient({ useApiKey: true });
+		const client = new OktaClient();
 
 		const response = await client.clearUserSessions(userId as string, {
 			oauthTokens: true,
