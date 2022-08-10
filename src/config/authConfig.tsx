@@ -1,7 +1,7 @@
 const {
 	VITE_APP_OKTA_TESTING_DISABLEHTTPSCHECK: DISABLEHTTPSCHECK = false,
 	VITE_APP_OKTA_SCOPES: SCOPES,
-	VITE_APP_OKTA_CLIENT_ID: CLIENT_ID,
+	VITE_APP_OKTA_CLIENT_ID: clientId,
 	VITE_APP_OKTA_AUTH_SERVER_ID: AUTH_SERVER_ID,
 	VITE_APP_OKTA_URL: OKTA_URL,
 	VITE_APP_OKTA_REDIRECT_URI:
@@ -11,15 +11,15 @@ const {
 	PROD: isProd,
 } = import.meta.env;
 
-const ISSUER = `${OKTA_URL}/oauth2/${AUTH_SERVER_ID}`;
+const issuer = `${OKTA_URL}/oauth2/${AUTH_SERVER_ID}`;
 
 console.log('REDIRECT_URI');
 console.log(REDIRECT_URI);
 // eslint-disable-next-line
 export const authConfig = {
 	oidc: {
-		clientId: CLIENT_ID,
-		issuer: ISSUER,
+		clientId,
+		issuer,
 		redirectUri: REDIRECT_URI,
 		scopes: SCOPES?.split(' '),
 		pkce: true,
