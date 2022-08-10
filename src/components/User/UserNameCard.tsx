@@ -1,6 +1,7 @@
 import React from 'react';
-import { TextField, useRecordContext, WrapperField } from 'react-admin';
-import { Typography } from '@mui/material';
+import { useRecordContext } from 'react-admin';
+import Typography from '@mui/material/Typography';
+
 import type { FieldProps, TextFieldProps } from 'react-admin';
 import type { AvatarProps, SxProps } from '@mui/material';
 import type { User } from '@okta/okta-sdk-nodejs';

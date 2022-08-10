@@ -1,7 +1,7 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import * as _ from 'lodash';
 import { OktaClient, JwtValidator } from '../../_common';
+
 import type { CreateDealerRequest, ValidateResult } from '../../_common';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const getDealerships = async (req: VercelRequest, res: VercelResponse) => {
 	// 1) Validate the accessToken
@@ -38,6 +38,8 @@ const getDealerships = async (req: VercelRequest, res: VercelResponse) => {
 		total: data.length,
 		data,
 	};
+
+	const { default: _ } = await import('lodash');
 
 	if (_sortOrder === 'desc') {
 		result.data = _.orderBy(data, ['profile.dealerCode'], ['desc']);

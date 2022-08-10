@@ -11,7 +11,6 @@ import {
 	TextInput,
 } from 'react-admin';
 import type { TabbedFormProps } from 'react-admin';
-import type { Group as OktaGroup, GroupProfile } from '@okta/okta-sdk-nodejs';
 
 import DealershipUsersFormTab from './DealershipUsersFormTab';
 import { CreateEditActions, UserLinkField } from 'components';

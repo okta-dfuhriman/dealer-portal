@@ -1,7 +1,7 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import * as _ from 'lodash';
 import { JwtValidator, OktaClient, ApiError } from '../../../_common';
+
 import type { ValidateResult } from '../../../_common';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const getDealership = async (req: VercelRequest, res: VercelResponse) => {
 	const {

@@ -1,6 +1,7 @@
+import { OktaClient, JwtValidator } from '../../../_common';
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type { ValidateResult } from '../../../_common';
-import { OktaClient, JwtValidator } from '../../../_common';
 
 const getUser = async (req: VercelRequest, res: VercelResponse) => {
 	try {

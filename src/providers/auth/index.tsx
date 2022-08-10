@@ -1,7 +1,6 @@
-import md5 from 'blueimp-md5';
 import type { AuthProvider as RaAuthProvider, UserIdentity } from 'react-admin';
-import { OktaAuth } from '@okta/okta-auth-js';
 import type {
+	OktaAuth as OktaAuthType,
 	Tokens,
 	UserClaims as OktaUserClaims,
 	AccessToken as OktaAccessToken,
@@ -13,7 +12,7 @@ type UserClaims = OktaUserClaims & {
 };
 
 const silentAuth = async (
-	sdk: OktaAuth,
+	sdk: OktaAuthType,
 	options?: { hasSession?: boolean; isAuthenticated?: boolean }
 ) => {
 	const { hasSession: _hasSession, isAuthenticated: _isAuthenticated } =
@@ -48,9 +47,10 @@ const silentAuth = async (
 	return isAuthenticated || false;
 };
 
-const getTokens = async (sdk: OktaAuth) => await sdk.tokenManager.getTokens();
+const getTokens = async (sdk: OktaAuthType) =>
+	await sdk.tokenManager.getTokens();
 
-const handleLogout = async (sdk: OktaAuth) => {
+const handleLogout = async (sdk: OktaAuthType) => {
 	const isAuthenticated = await sdk.isAuthenticated();
 
 	if (!isAuthenticated) {
@@ -92,8 +92,8 @@ const handleLogout = async (sdk: OktaAuth) => {
 };
 
 export default class AuthProvider {
-	oktaAuth: OktaAuth;
-	constructor(oktaAuth: OktaAuth) {
+	oktaAuth: OktaAuthType;
+	constructor(oktaAuth: OktaAuthType) {
 		this.oktaAuth = oktaAuth;
 	}
 
@@ -218,39 +218,12 @@ export default class AuthProvider {
 							});
 					});
 			},
-			getIdentity: () => {
-				return this.oktaAuth
-					.isAuthenticated()
-					.then((isAuthenticated) => {
-						if (!isAuthenticated) {
-							return Promise.reject();
-						}
-
-						return this.oktaAuth
-							.getUser()
-							.then((userInfo: OktaUserClaims) => {
-								const { sub: id, email, picture } = userInfo;
-
-								let avatar = picture;
-
-								if (!avatar) {
-									try {
-										const hashedEmail = md5(email!.trim());
-
-										avatar = `https://www.gravatar.com/avatar/${hashedEmail}?d=identicon`;
-									} catch {}
-								}
-
-								return {
-									...userInfo,
-									id,
-									avatar,
-								} as UserIdentity;
-							})
-							.then((user) => Promise.resolve(user))
-							.catch(() => Promise.reject());
-					});
-			},
+			getIdentity: () =>
+				this.getIdentity().then((result) =>
+					result
+						? Promise.resolve(result as UserIdentity)
+						: Promise.reject()
+				),
 			getAccessToken: (decode: boolean = false) => {
 				let result: string | OktaAccessToken | undefined;
 
@@ -269,5 +242,39 @@ export default class AuthProvider {
 				return Promise.resolve(result);
 			},
 		} as RaAuthProvider;
+	}
+
+	async getIdentity() {
+		const isAuthenticated = await this.oktaAuth.isAuthenticated();
+
+		if (!isAuthenticated) {
+			return false;
+		}
+
+		const {
+			sub: id,
+			email,
+			picture,
+			...userInfo
+		} = await this.oktaAuth.getUser();
+
+		let avatar = picture;
+
+		if (!avatar) {
+			try {
+				const { default: md5 } = await import('blueimp-md5');
+
+				const hashedEmail = md5(email!.trim());
+
+				avatar = `https://www.gravatar.com/avatar/${hashedEmail}?d=identicon`;
+			} catch {}
+		}
+
+		return {
+			...userInfo,
+			id,
+			avatar,
+			email,
+		};
 	}
 }

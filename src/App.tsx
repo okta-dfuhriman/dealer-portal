@@ -1,5 +1,4 @@
-import { Admin, CustomRoutes, Resource } from 'react-admin';
-import { Route } from 'react-router-dom';
+import { Admin, Resource } from 'react-admin';
 import { QueryClient, QueryClientConfig } from 'react-query';
 import { OktaAuth } from '@okta/okta-auth-js';
 import polyglotI18nProvider from 'ra-i18n-polyglot';
@@ -12,7 +11,7 @@ import { LoginPage, Me } from 'pages';
 import { AuthProvider, DataProvider } from 'providers';
 import { authConfig } from 'config';
 
-const STALE_TIME = import.meta.env.QUERY_STALE_TIME || 2.5; // Time in **MINUTES** to be used when setting the staleTime configuration.
+const STALE_TIME = import.meta.env.VITE_APP_QUERY_STALE_TIME || 2.5; // Time in **MINUTES** to be used when setting the staleTime configuration.
 
 const queryConfig: QueryClientConfig = {
 	defaultOptions: {
@@ -80,9 +79,6 @@ const App = () => {
 			ready={LoginPage}
 		>
 			{renderResources}
-			{/* <CustomRoutes>
-				<Route key={'me'} path='/me' element={<Me />} />
-			</CustomRoutes> */}
 		</Admin>
 	);
 };

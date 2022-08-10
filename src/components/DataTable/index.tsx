@@ -1,4 +1,5 @@
-import { DataGrid, GridColDef, DataGridProps } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
+import type { GridColDef, DataGridProps } from '@mui/x-data-grid';
 import { Box } from '@mui/material';
 
 const columns: GridColDef[] = [
@@ -95,7 +96,8 @@ export interface User {
 	dealer: string;
 }
 
-export interface DataTableProps extends Omit<DataGridProps, 'rows' | 'columns'> {
+export interface DataTableProps
+	extends Omit<DataGridProps, 'rows' | 'columns'> {
 	data?: User[];
 }
 

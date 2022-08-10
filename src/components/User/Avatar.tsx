@@ -1,9 +1,9 @@
 import { useRecordContext } from 'react-admin';
-import { Avatar as MuiAvatar } from '@mui/material';
+import MuiAvatar from '@mui/material/Avatar';
+
 import type { SxProps, Theme } from '@mui/material';
 import type { User } from '@okta/okta-sdk-nodejs';
 import type { FieldProps } from 'react-admin';
-
 export interface AvatarProps extends FieldProps<User> {
 	sx?: SxProps<Theme>;
 	size?: string;

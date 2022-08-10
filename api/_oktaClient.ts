@@ -1,18 +1,19 @@
-import _ from 'lodash';
-import { Client, CreateUserRequest, GroupRule } from '@okta/okta-sdk-nodejs';
+import { randomBytes } from 'crypto';
+import { Client } from '@okta/okta-sdk-nodejs';
+
+import { ApiError } from './_common';
+
+import type { RequestOptions } from '@okta/okta-sdk-nodejs/src/types/request-options';
 import type {
-	User,
-	UserProfile,
+	ClientConfig,
+	CreateUserRequest,
 	GroupProfile,
+	GroupRule,
 	GroupRuleOptions,
 	Group as OktaGroup,
-	ClientConfig,
+	User,
+	UserProfile,
 } from '@okta/okta-sdk-nodejs';
-import type { RequestOptions } from '@okta/okta-sdk-nodejs/src/types/request-options';
-import { ApiError } from './_common';
-import md5 from 'blueimp-md5';
-import { randomBytes } from 'crypto';
-import axios from 'axios';
 
 const {
 	VITE_APP_OKTA_USER_SERVICE_SCOPES: SERVICE_SCOPES = '',
@@ -207,8 +208,13 @@ export default class OktaClient extends Client {
 		if (domain) {
 			try {
 				const controller = new AbortController();
+
+				const {
+					default: { Axios },
+				} = await import('axios');
+
 				// Check to make sure a logo is actually available.
-				const { status } = await axios.get(
+				const { status } = await new Axios().get(
 					`https://logo.clearbit.com/${domain}`,
 					{ signal: controller.signal }
 				);
@@ -375,6 +381,8 @@ export default class OktaClient extends Client {
 	}
 
 	async getAvatar(email: string) {
+		const { default: md5 } = await import('blueimp-md5');
+
 		const hashedEmail = md5(email.trim());
 
 		return `https://www.gravatar.com/avatar/${hashedEmail}?d=identicon`;
