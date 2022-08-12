@@ -39,7 +39,7 @@ const i18nProvider = polyglotI18nProvider((locale) => {
 }, 'en');
 
 const authProvider = new AuthProvider(oktaAuth).init();
-const dataProvider = new DataProvider(authProvider).init();
+const dataProvider = new DataProvider({ authProvider, queryClient }).init();
 
 const App = () => {
 	const renderResources = (permissions: string[] = []) => {
