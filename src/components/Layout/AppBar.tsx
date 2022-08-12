@@ -52,7 +52,7 @@ const AppBar = (props: any) => {
 				<>
 					{isAuthenticated && (
 						<UserMenu>
-							<ConfigurationMenu />
+							{/* <ConfigurationMenu /> */}
 							<Logout />
 						</UserMenu>
 					)}
