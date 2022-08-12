@@ -119,12 +119,17 @@ export default class DataProvider {
 				})
 			);
 
-			this.queryClient.prefetchQuery(defaultGetDealersKey, () =>
-				getList({
-					resource: 'dealerships',
-					params: defaultGetDealersKey[2] as GetListParams,
-					httpClient: this.httpClient,
-				})
+			this.queryClient.prefetchQuery(
+				defaultGetDealersKey,
+				() =>
+					getList({
+						resource: 'dealerships',
+						params: defaultGetDealersKey[2] as GetListParams,
+						httpClient: this.httpClient,
+					}),
+				{
+					retry: 3,
+				}
 			);
 
 			this.queryClient.prefetchQuery(defaultGetRolesKey, () =>

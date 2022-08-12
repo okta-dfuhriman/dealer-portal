@@ -137,7 +137,6 @@ export default class HttpClient {
 				data: json,
 			};
 		}
-
 		return { ...json };
 	}
 }

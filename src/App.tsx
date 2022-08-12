@@ -1,7 +1,17 @@
-import { Admin, Resource } from 'react-admin';
-import { QueryClient, QueryClientConfig } from 'react-query';
+import React from 'react';
+import {
+	Admin,
+	AdminContext,
+	AdminUI as RaAdminUI,
+	Loading,
+	Resource,
+	useGetPermissions,
+	useAuthState,
+} from 'react-admin';
+import { QueryClient, useQueryClient } from 'react-query';
 import { OktaAuth } from '@okta/okta-auth-js';
 import polyglotI18nProvider from 'ra-i18n-polyglot';
+import type { QueryClientConfig } from 'react-query';
 
 import { lightTheme } from 'styles/theme';
 import Languages from 'i18n';
@@ -41,45 +51,93 @@ const i18nProvider = polyglotI18nProvider((locale) => {
 const authProvider = new AuthProvider(oktaAuth).init();
 const dataProvider = new DataProvider({ authProvider, queryClient }).init();
 
-const App = () => {
-	const renderResources = (permissions: string[] = []) => {
-		return Resources.map((props) => {
-			let isAllowed = false;
+const AdminUI = () => {
+	const getPermissions = useGetPermissions();
+	const { isLoading, authenticated: isAuthenticated } = useAuthState();
+	const queryClient = useQueryClient();
 
-			switch (props.name) {
-				case 'users':
-					isAllowed =
-						permissions.includes(`users:read`) ||
-						permissions.includes(`users:read:dealership`);
-					break;
-				case 'dealerships':
-				case 'roles':
-					isAllowed = permissions.includes(`${props.name}:read`);
-					break;
+	const [resources, setResources] = React.useState<
+		JSX.Element[] | undefined
+	>();
+
+	React.useEffect(() => {
+		const renderResources = async () => {
+			const permissions = (await getPermissions()) || [];
+
+			if (permissions.length > 0) {
+				return Resources.map((props) => {
+					let isAllowed = false;
+
+					switch (props.name) {
+						case 'users':
+							isAllowed =
+								permissions.includes(`users:read`) ||
+								permissions.includes(`users:read:dealership`);
+							if (!isAllowed) {
+								queryClient.removeQueries('users');
+							}
+							break;
+						case 'dealerships':
+							isAllowed = permissions.includes(
+								`${props.name}:read`
+							);
+
+							if (!isAllowed) {
+								queryClient.removeQueries('dealerships');
+							}
+							break;
+						case 'roles':
+							isAllowed = permissions.includes(
+								`${props.name}:read`
+							);
+
+							if (!isAllowed) {
+								queryClient.removeQueries('roles');
+							}
+							break;
+					}
+					if (isAllowed) {
+						return <Resource {...props} />;
+					}
+					return <></>;
+				});
 			}
-			if (isAllowed) {
-				return <Resource {...props} />;
-			}
-			return <></>;
-		});
-	};
+
+			return [<></>];
+		};
+
+		if (isAuthenticated) {
+			renderResources().then((result) => setResources(() => result));
+		} else {
+			setResources(() => [<></>]);
+		}
+	}, [isAuthenticated]);
 
 	return (
-		<Admin
+		<RaAdminUI
 			title='Dealer Portal'
+			loginPage={LoginPage}
+			disableTelemetry
 			requireAuth
+			layout={Layout}
+			ready={Loading}
+		>
+			{resources}
+		</RaAdminUI>
+	);
+};
+
+const App = () => {
+	return (
+		<AdminContext
 			authProvider={authProvider}
 			dataProvider={dataProvider}
 			queryClient={queryClient}
-			loginPage={LoginPage}
-			layout={Layout}
 			i18nProvider={i18nProvider}
-			disableTelemetry
 			theme={lightTheme}
-			ready={LoginPage}
 		>
-			{renderResources}
-		</Admin>
+			<AdminUI />
+		</AdminContext>
 	);
 };
 
